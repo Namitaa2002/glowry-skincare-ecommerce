@@ -1,186 +1,122 @@
-# GLOWRY — Skincare E-Commerce Website
+# ✨ GLOWRY — Skincare E-Commerce Website
 
-A modern full-stack skincare e-commerce website built with the **MERN stack**. GLOWRY provides a complete online skincare shopping experience with product browsing, search and filtering, wishlist, cart, checkout, order tracking, user accounts, and a dedicated admin panel.
+**GLOWRY** is a full-stack skincare e-commerce web application built using the **MERN Stack**. It provides a modern shopping experience for customers along with a dedicated admin panel for managing products, customers, and orders.
 
-## ✨ Project Overview
-
-GLOWRY is designed to make everyday skincare shopping simple, organized, and user-friendly.
-
-The application includes two main experiences:
-
-* **Customer Website** — Browse skincare products, manage wishlist and cart, place orders, track orders, and manage account settings.
-* **Admin Panel** — Manage products, customers, orders, and store activity through a dedicated dashboard.
+The project focuses on clean UI, responsive design, authentication, REST APIs, MongoDB integration, cart and wishlist functionality, and complete order management.
 
 ---
 
-## 🚀 Features
+## 🌸 Project Overview
 
-### 👤 User Features
+GLOWRY is designed as a complete skincare shopping platform where users can:
 
-* User registration and login
-* Secure password hashing with bcrypt
-* JWT-based authentication
-* Forgot password and reset password functionality
-* User profile management
+* Explore skincare products
+* Search, filter, and sort products
+* View detailed product information
+* Add products to cart and wishlist
+* Manage their profile and addresses
+* Place and track orders
+* Manage account preferences
+* Review products
+
+The application also includes an **Admin Dashboard** for store management.
+
+---
+
+## 🚀 Key Features
+
+### 🛍️ Customer Features
+
+* Modern responsive skincare storefront
+* Product search
+* Category filtering
+* Product sorting
+* Product details
+* Wishlist
+* Shopping cart
+* Cart quantity management
+* Checkout
+* Order placement
+* Order history
+* Order tracking
+* User profile
+* Address management
 * Account settings
 * Change password
-* Address management
-* Wishlist management
-* Shopping cart
-* Product search
-* Product filtering and sorting
-* Product details
-* Product reviews and ratings
-* Checkout
-* Cash on Delivery and online payment options
-* Order placement
-* My Orders
-* Order tracking
-* Order status updates
-* Email notifications
-* Responsive skincare-focused UI
+* Forgot password
+* Password reset
+* Product reviews
+* Contact form
 
-### 🛠️ Admin Features
+### 👑 Admin Features
 
-* Separate admin authentication
+* Secure admin authentication
 * Admin dashboard
+* Store statistics
 * Customer management
 * Product management
 * Add products
 * Edit products
 * Delete products
 * Order management
-* View customer orders
 * Update order status
-* Revenue overview
-* Total customers statistics
-* Total products statistics
-* Total orders statistics
 * Recent orders
-* Quick management actions
+* Revenue overview
 
 ---
 
-## 🖥️ Screenshots
-
-### 🏠 Home Page
-
-The GLOWRY homepage introduces the brand, skincare routine, skin needs section, and featured products.
-
-![GLOWRY Home Page](screenshots/home.png)
-
----
-
-### 🛍️ Shop / Products
-
-Customers can browse skincare products with search, filtering, sorting, categories, pricing, and product cards.
-
-![GLOWRY Shop](screenshots/shop.png)
-
----
-
-### 🧴 Product Details
-
-The product details page provides detailed product information and allows users to interact with the product before adding it to the cart or wishlist.
-
-![Product Details](screenshots/product_details.png)
-
----
-
-### 🛒 Shopping Cart
-
-Users can review selected products, update quantities, remove products, and proceed toward checkout.
-
-![Shopping Cart](screenshots/cart.png)
-
----
-
-### 👤 User Dashboard
-
-The user dashboard provides access to profile information, orders, wishlist, addresses, order tracking, and account settings.
-
-![User Dashboard](screenshots/user_dashboard.png)
-
----
-
-### 📊 Admin Dashboard
-
-The admin dashboard provides an overview of store activity including customers, products, orders, revenue, and recent orders.
-
-![Admin Dashboard](screenshots/admin_dashboard.png)
-
----
-
-### 📦 Admin Product Management
-
-Administrators can add, edit, and remove products from the store through the product management panel.
-
-![Admin Products](screenshots/admin_products.png)
-
----
-
-## 🧑‍💻 Tech Stack
+## 🛠️ Tech Stack
 
 ### Frontend
 
-* React.js
-* Vite
-* React Router
-* Axios
-* JavaScript
-* HTML5
-* CSS3
-* Lucide React
+| Technology   | Purpose                           |
+| ------------ | --------------------------------- |
+| React.js     | User interface                    |
+| Vite         | Frontend development & build tool |
+| React Router | Page navigation                   |
+| Axios        | API communication                 |
+| Lucide React | Icons                             |
+| CSS          | Styling & responsive UI           |
 
 ### Backend
 
-* Node.js
-* Express.js
-* MongoDB
-* Mongoose
-* JWT
-* bcryptjs
-* Nodemailer
-
-### Development Tools
-
-* Git
-* GitHub
-* MongoDB Compass
-* VS Code
+| Technology | Purpose             |
+| ---------- | ------------------- |
+| Node.js    | Backend runtime     |
+| Express.js | REST API            |
+| MongoDB    | Database            |
+| Mongoose   | MongoDB ODM         |
+| JWT        | Authentication      |
+| bcrypt.js  | Password hashing    |
+| Nodemailer | Email functionality |
 
 ---
 
 ## 📁 Project Structure
 
-
+```text
 glowry-skincare-ecommerce/
 │
-├── backend/
-│   ├── config/
-│   ├── controllers/
-│   ├── middleware/
-│   ├── models/
-│   ├── public/
-│   │   └── images/
-│   ├── routes/
-│   ├── utils/
-│   ├── .env
-│   ├── .gitignore
-│   ├── package.json
-│   ├── seedProducts.js
-│   └── server.js
-│
 ├── frontend/
-│   ├── public/
 │   ├── src/
 │   │   ├── assets/
 │   │   ├── components/
 │   │   ├── context/
 │   │   ├── data/
 │   │   └── pages/
-│   ├── package.json
-│   └── vite.config.js
+│   └── package.json
+│
+├── backend/
+│   ├── config/
+│   ├── controllers/
+│   ├── middleware/
+│   ├── models/
+│   ├── routes/
+│   ├── utils/
+│   ├── public/
+│   ├── seedProducts.js
+│   ├── server.js
+│   └── package.json
 │
 ├── screenshots/
 │   ├── home.png
@@ -192,142 +128,77 @@ glowry-skincare-ecommerce/
 │   └── admin_products.png
 │
 └── README.md
-
-
----
-
-## ⚙️ Getting Started
-
-### 1. Clone the Repository
-
-```bash
-git clone https://github.com/Namitaa2002/glowry-skincare-ecommerce.git
-```
-
-```bash
-cd glowry-skincare-ecommerce
-```
-
-### 2. Install Frontend Dependencies
-
-```bash
-cd frontend
-npm install
-```
-
-### 3. Install Backend Dependencies
-
-Open another terminal:
-
-```bash
-cd backend
-npm install
 ```
 
 ---
 
-## 🔐 Environment Variables
+## 📸 Screenshots
 
-Create a `.env` file inside the `backend` folder.
+### 🏠 Home Page
 
-Example:
+![GLOWRY Home](screenshots/home.png)
 
-```env
-PORT=5000
-MONGO_URI=your_mongodb_connection_string
-JWT_SECRET=your_jwt_secret
+### 🛍️ Shop
 
-EMAIL_USER=your_email
-EMAIL_PASS=your_email_password
-```
+![GLOWRY Shop](screenshots/shop.png)
 
-**Do not commit the actual `.env` file to GitHub.**
+### 🧴 Product Details
 
----
+![Product Details](screenshots/product_details.png)
 
-## ▶️ Run the Project
+### 🛒 Shopping Cart
 
-### Start Backend
+![Shopping Cart](screenshots/cart.png)
 
-From the `backend` folder:
+### 👤 User Dashboard
 
-```bash
-node server.js
-```
+![User Dashboard](screenshots/user_dashboard.png)
 
-The backend runs on:
+### 👑 Admin Dashboard
 
-```text
-http://localhost:5000
-```
+![Admin Dashboard](screenshots/admin_dashboard.png)
 
-### Start Frontend
+### 📦 Admin Product Management
 
-From the `frontend` folder:
-
-```bash
-npm run dev
-```
-
-The frontend runs on the Vite development server, usually:
-
-```text
-http://localhost:5173
-```
+![Admin Products](screenshots/admin_products.png)
 
 ---
 
-## 🔑 Application Routes
+## 🔐 Authentication & Security
 
-### Customer
+The application uses JWT-based authentication and role-based access control.
 
-```text
-/
- /products
- /products/:id
- /cart
- /wishlist
- /checkout
- /orders
- /track-order
- /profile
- /settings
-```
+### User Authentication
 
-### Admin
-
-```text
-/admin/login
-/admin
-/admin/products
-/admin/orders
-/admin/users
-```
-
----
-
-## 🔒 Authentication & Security
-
-The application includes:
-
-* JWT authentication
-* Password hashing using bcryptjs
+* User registration
+* Secure password hashing using bcrypt.js
+* User login
+* JWT token generation
 * Protected user routes
-* Protected admin routes
-* Role-based admin access
-* Secure password reset flow
-* Environment variables for sensitive configuration
+* Password change
+* Password reset
+
+### Admin Authentication
+
+* Separate admin login
+* JWT-based admin authentication
+* Admin-only protected routes
+* Role-based authorization
+
+Sensitive credentials and environment variables are excluded from the repository.
 
 ---
 
-## 🛒 E-Commerce Flow
+## 🛒 Shopping & Order Flow
+
+The customer shopping flow includes:
 
 ```text
 Browse Products
       ↓
 View Product Details
       ↓
-Add to Wishlist / Cart
+Add to Cart
       ↓
 Review Cart
       ↓
@@ -335,82 +206,236 @@ Checkout
       ↓
 Place Order
       ↓
-My Orders
+Order Confirmation
       ↓
 Track Order
 ```
 
+### Order Status
+
+Orders can move through the following statuses:
+
+* Processing
+* Confirmed
+* Shipped
+* Delivered
+* Cancelled
+
 ---
 
-## 🛠️ Admin Flow
+## 👑 Admin Dashboard
 
-```text
-Admin Login
-     ↓
-Admin Dashboard
-     ↓
-Manage Products
-     ↓
-Manage Orders
-     ↓
-Manage Customers
-     ↓
-Update Order Status
+The admin dashboard provides an overview of the store through:
+
+* Total Customers
+* Total Products
+* Total Orders
+* Total Revenue
+* Recent Orders
+
+Administrators can also manage:
+
+* Products
+* Orders
+* Customers
+
+---
+
+## ⚙️ Getting Started
+
+### Prerequisites
+
+Make sure you have installed:
+
+* Node.js
+* npm
+* MongoDB
+
+---
+
+### 1. Clone the Repository
+
+```bash
+git clone https://github.com/Namitaa2002/glowry-skincare-ecommerce.git
+cd glowry-skincare-ecommerce
 ```
 
 ---
 
-## 📌 Future Improvements
+### 2. Backend Setup
 
-Some possible future improvements include:
+Navigate to the backend:
 
-* Online payment gateway integration
-* Product recommendation system
-* Advanced admin analytics
-* Inventory management
-* Product stock alerts
-* Customer notifications
-* More advanced skincare personalization
-* Deployment with a production database and hosting
+```bash
+cd backend
+```
+
+Install dependencies:
+
+```bash
+npm install
+```
+
+Create a `.env` file inside the `backend` folder:
+
+```env
+PORT=5000
+MONGO_URI=your_mongodb_connection_string
+JWT_SECRET=your_jwt_secret
+
+EMAIL_USER=your_email
+EMAIL_PASS=your_email_app_password
+```
+
+Start the backend server:
+
+```bash
+npm start
+```
+
+Backend:
+
+```text
+http://localhost:5000
+```
 
 ---
 
-## 🎯 Learning Outcomes
+### 3. Frontend Setup
 
-This project helped demonstrate practical implementation of:
+Open a new terminal and navigate to the frontend:
 
-* React component-based development
-* React Router
-* React state management and Context API
-* REST API integration
-* Axios
-* Node.js and Express.js
-* MongoDB and Mongoose
-* CRUD operations
+```bash
+cd frontend
+```
+
+Install dependencies:
+
+```bash
+npm install
+```
+
+Start the development server:
+
+```bash
+npm run dev
+```
+
+Frontend:
+
+```text
+http://localhost:5173
+```
+
+---
+
+## 🔗 Application Routes
+
+### Customer
+
+| Route           | Description      |
+| --------------- | ---------------- |
+| `/`             | Home             |
+| `/products`     | Shop             |
+| `/products/:id` | Product Details  |
+| `/cart`         | Shopping Cart    |
+| `/wishlist`     | Wishlist         |
+| `/checkout`     | Checkout         |
+| `/orders`       | My Orders        |
+| `/track-order`  | Track Order      |
+| `/profile`      | User Profile     |
+| `/settings`     | Account Settings |
+
+### Admin
+
+| Route              | Description         |
+| ------------------ | ------------------- |
+| `/admin/login`     | Admin Login         |
+| `/admin/dashboard` | Admin Dashboard     |
+| `/admin/products`  | Product Management  |
+| `/admin/orders`    | Order Management    |
+| `/admin/users`     | Customer Management |
+
+---
+
+## 🔌 Backend API Modules
+
+The backend is organized into separate REST API route modules for:
+
+* Authentication
+* Products
+* Cart
+* Wishlist
+* Orders
+* Addresses
+* Reviews
+* Contact
+* Admin Products
+* Admin Orders
+* Admin Users
+
+This structure keeps the backend modular and easier to maintain.
+
+---
+
+## 📧 Email Functionality
+
+GLOWRY includes email functionality using **Nodemailer**.
+
+Email functionality is used for account-related communication such as:
+
+* Welcome email after registration
+* Password reset emails
+
+---
+
+## 🎯 Learning Objectives
+
+This project was developed to gain practical experience with:
+
+* MERN stack development
+* React component architecture
+* REST API development
+* MongoDB database operations
 * Authentication and authorization
-* JWT
-* Password hashing
-* Admin role management
-* Cart and wishlist functionality
-* Order management
-* Git and GitHub
-* Full-stack application structure
+* CRUD operations
+* API integration using Axios
+* State management
+* Protected routes
+* Admin dashboards
+* E-commerce workflows
+* Responsive UI development
+
+---
+
+## 🔮 Future Improvements
+
+Possible future enhancements include:
+
+* Online payment gateway integration
+* Product recommendation system
+* Advanced skincare quiz
+* Inventory management
+* Sales analytics
+* Cloud image storage
+* Deployment with production database
+* Automated email notifications
+* Advanced admin reporting
 
 ---
 
 ## 👩‍💻 Author
 
-**Namita Kingrani**
+### Namita Kingrani
 
-MCA Graduate | Aspiring Software Developer
+**MCA Graduate | Aspiring Software Developer**
 
-GitHub:
-https://github.com/Namitaa2002
+Built as a full-stack MERN project to demonstrate practical development skills across frontend, backend, database, authentication, and e-commerce functionality.
 
 ---
 
 ## ⭐ Project
 
-**GLOWRY — Skincare E-Commerce Website**
+If you find this project useful or interesting, consider giving the repository a ⭐ on GitHub.
 
-A full-stack MERN project created to demonstrate practical frontend, backend, database, authentication, e-commerce, and admin-panel development.
+**GLOWRY — Your Skin. Your Glow.**
