@@ -83,7 +83,7 @@ Customers can browse skincare products with search, filtering, sorting, categori
 
 The product details page provides detailed product information and allows users to interact with the product before adding it to the cart or wishlist.
 
-![Product Details](screenshots/product-details.png)
+![Product Details](screenshots/product_details.png)
 
 ---
 
