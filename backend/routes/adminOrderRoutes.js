@@ -11,6 +11,19 @@ const router = express.Router();
 
 
 // =========================================================
+// ALLOWED ORDER STATUSES
+// =========================================================
+
+const allowedStatuses = [
+  "Processing",
+  "Confirmed",
+  "Shipped",
+  "Delivered",
+  "Cancelled",
+];
+
+
+// =========================================================
 // GET ALL ORDERS — ADMIN
 // =========================================================
 
@@ -22,8 +35,11 @@ router.get(
 
     try {
 
-      const orders = await Order.find()
-        .sort({ createdAt: -1 });
+      const orders =
+        await Order.find()
+          .sort({
+            createdAt: -1,
+          });
 
 
       res.status(200).json(
@@ -63,6 +79,30 @@ router.get(
   async (req, res) => {
 
     try {
+
+      // ---------------------------------------
+      // VALIDATE ORDER ID
+      // ---------------------------------------
+
+      if (
+        !/^[0-9a-fA-F]{24}$/.test(
+          req.params.id
+        )
+      ) {
+
+        return res.status(400).json({
+
+          message:
+            "Invalid order ID.",
+
+        });
+
+      }
+
+
+      // ---------------------------------------
+      // FIND ORDER
+      // ---------------------------------------
 
       const order =
         await Order.findById(
@@ -125,20 +165,9 @@ router.put(
       } = req.body;
 
 
-      // -----------------------------------------
-      // VALID STATUS
-      // -----------------------------------------
-
-      const allowedStatuses = [
-
-        "Processing",
-        "Confirmed",
-        "Shipped",
-        "Delivered",
-        "Cancelled",
-
-      ];
-
+      // ---------------------------------------
+      // VALIDATE STATUS
+      // ---------------------------------------
 
       if (
         !status ||
@@ -157,9 +186,29 @@ router.put(
       }
 
 
-      // -----------------------------------------
+      // ---------------------------------------
+      // VALIDATE ORDER ID
+      // ---------------------------------------
+
+      if (
+        !/^[0-9a-fA-F]{24}$/.test(
+          req.params.id
+        )
+      ) {
+
+        return res.status(400).json({
+
+          message:
+            "Invalid order ID.",
+
+        });
+
+      }
+
+
+      // ---------------------------------------
       // FIND ORDER
-      // -----------------------------------------
+      // ---------------------------------------
 
       const order =
         await Order.findById(
@@ -179,9 +228,43 @@ router.put(
       }
 
 
-      // -----------------------------------------
+      // ---------------------------------------
+      // PREVENT CHANGING FINAL STATES
+      // ---------------------------------------
+
+      if (
+        order.status === "Delivered" &&
+        status !== "Delivered"
+      ) {
+
+        return res.status(400).json({
+
+          message:
+            "A delivered order cannot be moved to another status.",
+
+        });
+
+      }
+
+
+      if (
+        order.status === "Cancelled" &&
+        status !== "Cancelled"
+      ) {
+
+        return res.status(400).json({
+
+          message:
+            "A cancelled order cannot be moved to another status.",
+
+        });
+
+      }
+
+
+      // ---------------------------------------
       // UPDATE STATUS
-      // -----------------------------------------
+      // ---------------------------------------
 
       order.status =
         status;
@@ -190,9 +273,9 @@ router.put(
       await order.save();
 
 
-      // -----------------------------------------
+      // ---------------------------------------
       // RESPONSE
-      // -----------------------------------------
+      // ---------------------------------------
 
       res.status(200).json({
 

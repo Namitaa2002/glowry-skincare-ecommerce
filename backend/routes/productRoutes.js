@@ -8,6 +8,11 @@ import {
   deleteProduct,
 } from "../controllers/productController.js";
 
+import {
+  protect,
+  adminOnly,
+} from "../middleware/authMiddleware.js";
+
 
 const router = express.Router();
 
@@ -15,6 +20,7 @@ const router = express.Router();
 // =========================================
 // GET ALL PRODUCTS
 // GET /api/products
+// PUBLIC
 // =========================================
 
 router.get(
@@ -26,6 +32,7 @@ router.get(
 // =========================================
 // GET SINGLE PRODUCT
 // GET /api/products/:id
+// PUBLIC
 // =========================================
 
 router.get(
@@ -37,10 +44,13 @@ router.get(
 // =========================================
 // CREATE PRODUCT
 // POST /api/products
+// ADMIN ONLY
 // =========================================
 
 router.post(
   "/",
+  protect,
+  adminOnly,
   createProduct
 );
 
@@ -48,10 +58,13 @@ router.post(
 // =========================================
 // UPDATE PRODUCT
 // PUT /api/products/:id
+// ADMIN ONLY
 // =========================================
 
 router.put(
   "/:id",
+  protect,
+  adminOnly,
   updateProduct
 );
 
@@ -59,10 +72,13 @@ router.put(
 // =========================================
 // DELETE PRODUCT
 // DELETE /api/products/:id
+// ADMIN ONLY
 // =========================================
 
 router.delete(
   "/:id",
+  protect,
+  adminOnly,
   deleteProduct
 );
 

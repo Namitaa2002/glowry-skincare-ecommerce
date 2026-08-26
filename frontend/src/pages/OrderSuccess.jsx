@@ -10,12 +10,15 @@ import {
 
 import axios from "axios";
 
+import {
+  API_BASE_URL,
+  SERVER_BASE_URL,
+} from "../config/api";
 
 function OrderSuccess() {
 
   const [searchParams] =
     useSearchParams();
-
 
   const orderId =
     searchParams.get("id");
@@ -28,13 +31,36 @@ function OrderSuccess() {
   const [order, setOrder] =
     useState(null);
 
-
   const [loading, setLoading] =
     useState(true);
 
-
   const [error, setError] =
     useState("");
+
+
+  // =========================================
+  // IMAGE URL
+  // =========================================
+
+  const getImageUrl = (image) => {
+
+    if (!image) {
+      return "";
+    }
+
+    if (
+      image.startsWith("http://") ||
+      image.startsWith("https://")
+    ) {
+      return image;
+    }
+
+    if (image.startsWith("/")) {
+      return `${SERVER_BASE_URL}${image}`;
+    }
+
+    return `${SERVER_BASE_URL}/${image}`;
+  };
 
 
   // =========================================
@@ -48,9 +74,12 @@ function OrderSuccess() {
       try {
 
         setLoading(true);
-
         setError("");
 
+
+        // -------------------------------------
+        // CHECK ORDER ID
+        // -------------------------------------
 
         if (!orderId) {
 
@@ -63,21 +92,51 @@ function OrderSuccess() {
         }
 
 
-          const token = localStorage.getItem("glowryToken");
+        // -------------------------------------
+        // CHECK TOKEN
+        // -------------------------------------
 
-          if (!token) {
-            setError("Authentication required. Please login again.");
-            return;
-          }
+        const token =
+          localStorage.getItem(
+            "glowryToken"
+          );
 
-          const response = await axios.get(
-            `http://localhost:5000/api/orders/${orderId}`,
+
+        if (!token) {
+
+          setError(
+            "Authentication required. Please login again."
+          );
+
+          return;
+
+        }
+
+
+        // -------------------------------------
+        // GET ORDER
+        // -------------------------------------
+
+        const response =
+          await axios.get(
+
+            `${API_BASE_URL}/orders/details/${orderId}`,
+
             {
               headers: {
-                Authorization: `Bearer ${token}`,
+                Authorization:
+                  `Bearer ${token}`,
               },
             }
+
           );
+
+
+        console.log(
+          "Fetched Order:",
+          response.data
+        );
+
 
         setOrder(
           response.data
@@ -91,9 +150,18 @@ function OrderSuccess() {
           error
         );
 
+        console.error(
+          "Backend Response:",
+          error.response?.data
+        );
+
 
         setError(
+
+          error.response?.data?.message ||
+
           "This order may no longer be available or the order ID is incorrect."
+
         );
 
 
@@ -127,16 +195,13 @@ function OrderSuccess() {
             ✓
           </div>
 
-
           <p className="section-small-title">
             ORDER CONFIRMATION
           </p>
 
-
           <h1>
             Loading Your Order...
           </h1>
-
 
           <p className="success-text">
             Please wait while we fetch
@@ -168,22 +233,20 @@ function OrderSuccess() {
             !
           </div>
 
-
           <p className="section-small-title">
             ORDER NOT FOUND
           </p>
-
 
           <h1>
             We Couldn't Find This Order
           </h1>
 
-
           <p className="success-text">
+
             {error ||
               "This order may no longer be available or the order ID is incorrect."}
-          </p>
 
+          </p>
 
           <div className="success-buttons">
 
@@ -193,7 +256,6 @@ function OrderSuccess() {
             >
               Continue Shopping
             </Link>
-
 
             <Link
               to="/"
@@ -220,26 +282,30 @@ function OrderSuccess() {
   const customer =
     order.customer || {};
 
-
   const items =
-    order.items || [];
-
+    Array.isArray(order.items)
+      ? order.items
+      : [];
 
   const subtotal =
-    order.subtotal ??
-    order.total ??
-    0;
-
+    Number(
+      order.subtotal ??
+      order.total ??
+      0
+    );
 
   const discount =
-    order.discount || 0;
-
+    Number(
+      order.discount || 0
+    );
 
   const finalTotal =
-    order.total ??
-    Math.max(
-      0,
-      subtotal - discount
+    Number(
+      order.total ??
+      Math.max(
+        0,
+        subtotal - discount
+      )
     );
 
 
@@ -251,8 +317,22 @@ function OrderSuccess() {
     order.createdAt
       ? new Date(
           order.createdAt
-        ).toLocaleDateString()
-      : new Date().toLocaleDateString();
+        ).toLocaleDateString(
+          "en-IN",
+          {
+            day: "2-digit",
+            month: "long",
+            year: "numeric",
+          }
+        )
+      : new Date().toLocaleDateString(
+          "en-IN",
+          {
+            day: "2-digit",
+            month: "long",
+            year: "numeric",
+          }
+        );
 
 
   // =========================================
@@ -263,13 +343,11 @@ function OrderSuccess() {
 
     <main className="order-success-page">
 
-
       {/* =====================================
           SUCCESS CARD
       ===================================== */}
 
       <div className="success-card">
-
 
         {/* SUCCESS ICON */}
 
@@ -277,16 +355,13 @@ function OrderSuccess() {
           ✓
         </div>
 
-
         <p className="section-small-title">
           ORDER CONFIRMED
         </p>
 
-
         <h1>
           Thank You For Your Order
         </h1>
-
 
         <p className="success-text">
           Your Glowry skincare products
@@ -294,17 +369,13 @@ function OrderSuccess() {
         </p>
 
 
-
-        {/* ===================================
-            ORDER ID
-        =================================== */}
+        {/* ORDER ID */}
 
         <div className="order-id-box">
 
           <span>
             Order ID
           </span>
-
 
           <strong>
             {order.orderId}
@@ -313,17 +384,13 @@ function OrderSuccess() {
         </div>
 
 
-
-        {/* ===================================
-            DELIVERY
-        =================================== */}
+        {/* DELIVERY */}
 
         <div className="delivery-box">
 
           <span>
             Estimated Delivery
           </span>
-
 
           <strong>
             3 - 5 Business Days
@@ -332,13 +399,9 @@ function OrderSuccess() {
         </div>
 
 
-
-        {/* ===================================
-            ORDER DETAILS
-        =================================== */}
+        {/* ORDER DETAILS */}
 
         <div className="success-order-details">
-
 
           <div className="success-details-header">
 
@@ -349,84 +412,125 @@ function OrderSuccess() {
           </div>
 
 
-
           {/* PRODUCTS */}
 
           <div className="success-products">
 
-            {items.map((product, index) => (
+            {items.map(
+              (product, index) => (
 
-              <div
-                className="success-product"
-                key={
-                  product.product ||
-                  product._id ||
-                  index
-                }
-              >
+                <div
+                  className="success-product"
+                  key={
+                    product.product ||
+                    product._id ||
+                    index
+                  }
+                >
+
+                  {/* PRODUCT IMAGE */}
+
+                  <div className="success-product-image">
+
+                    {product.image ? (
+
+                      <img
+                        src={getImageUrl(
+                          product.image
+                        )}
+                        alt={
+                          product.name ||
+                          "Glowry product"
+                        }
+
+                        onError={(e) => {
+
+                          console.error(
+                            "Order image failed:",
+                            product.image
+                          );
+
+                          e.currentTarget.style.display =
+                            "none";
+
+                        }}
+
+                      />
+
+                    ) : (
+
+                      <div className="product-image-placeholder">
+                        G
+                      </div>
+
+                    )}
+
+                    <span>
+                      {product.quantity}
+                    </span>
+
+                  </div>
 
 
-                <div className="success-product-image">
+                  {/* PRODUCT INFORMATION */}
 
-                  <img
-                    src={product.image}
-                    alt={product.name}
-                  />
+                  <div className="success-product-info">
+
+                    <strong>
+                      {product.name}
+                    </strong>
+
+                    <span>
+
+                      ₹
+                      {Number(
+                        product.price || 0
+                      )}
+
+                      {" × "}
+
+                      {Number(
+                        product.quantity || 1
+                      )}
+
+                    </span>
+
+                  </div>
 
 
-                  <span>
-                    {product.quantity}
-                  </span>
+                  {/* PRODUCT TOTAL */}
 
-                </div>
+                  <strong className="success-product-total">
 
+                    ₹
+                    {Number(
+                      product.price || 0
+                    ) *
+                      Number(
+                        product.quantity || 1
+                      )}
 
-
-                <div className="success-product-info">
-
-                  <strong>
-                    {product.name}
                   </strong>
 
-
-                  <span>
-                    ₹{product.price} ×{" "}
-                    {product.quantity}
-                  </span>
-
                 </div>
 
-
-
-                <strong className="success-product-total">
-
-                  ₹
-                  {Number(product.price) *
-                    Number(product.quantity)}
-
-                </strong>
-
-              </div>
-
-            ))}
+              )
+            )}
 
           </div>
 
 
-
-          {/* =================================
-              PRICE SUMMARY
-          ================================= */}
+          {/* PRICE SUMMARY */}
 
           <div className="success-summary">
 
+            {/* SUBTOTAL */}
 
             <div className="success-summary-row">
 
               <span>
                 Subtotal
               </span>
-
 
               <span>
                 ₹{subtotal}
@@ -435,24 +539,26 @@ function OrderSuccess() {
             </div>
 
 
+            {/* DISCOUNT */}
 
             {discount > 0 && (
 
               <div className="success-summary-row discount-row">
 
                 <span>
+
                   Discount
 
                   {order.coupon && (
 
                     <small>
-                      {" "}({order.coupon})
+                      {" "}
+                      ({order.coupon})
                     </small>
 
                   )}
 
                 </span>
-
 
                 <span>
                   -₹{discount}
@@ -463,13 +569,13 @@ function OrderSuccess() {
             )}
 
 
+            {/* SHIPPING */}
 
             <div className="success-summary-row">
 
               <span>
                 Shipping
               </span>
-
 
               <span className="free-shipping">
                 FREE
@@ -478,17 +584,16 @@ function OrderSuccess() {
             </div>
 
 
-
             <div className="summary-divider"></div>
 
 
+            {/* TOTAL */}
 
             <div className="success-summary-total">
 
               <span>
                 Total Paid
               </span>
-
 
               <strong>
                 ₹{finalTotal}
@@ -501,13 +606,9 @@ function OrderSuccess() {
         </div>
 
 
-
-        {/* ===================================
-            CUSTOMER + PAYMENT
-        =================================== */}
+        {/* CUSTOMER + PAYMENT */}
 
         <div className="success-info-grid">
-
 
           {/* CUSTOMER */}
 
@@ -517,30 +618,41 @@ function OrderSuccess() {
               DELIVERING TO
             </p>
 
-
             <strong>
-              {customer.fullName}
+              {customer.fullName ||
+                "Customer"}
             </strong>
 
-
             <span>
-              {customer.address}
+              {customer.address ||
+                ""}
             </span>
 
-
             <span>
-              {customer.city},{" "}
-              {customer.state}{" "}
-              {customer.pincode}
+
+              {customer.city ||
+                ""}
+
+              {customer.city &&
+                customer.state
+                ? ", "
+                : ""}
+
+              {customer.state ||
+                ""}
+
+              {customer.pincode
+                ? ` ${customer.pincode}`
+                : ""}
+
             </span>
 
-
             <span>
-              {customer.phone}
+              {customer.phone ||
+                ""}
             </span>
 
           </div>
-
 
 
           {/* PAYMENT */}
@@ -550,7 +662,6 @@ function OrderSuccess() {
             <p>
               PAYMENT METHOD
             </p>
-
 
             <strong>
 
@@ -562,7 +673,6 @@ function OrderSuccess() {
                 : "Online Payment"}
 
             </strong>
-
 
             <span>
 
@@ -580,17 +690,13 @@ function OrderSuccess() {
         </div>
 
 
-
-        {/* ===================================
-            ORDER DATE
-        =================================== */}
+        {/* ORDER DATE */}
 
         <div className="success-order-date">
 
           <span>
             Order placed on
           </span>
-
 
           <strong>
             {orderDate}
@@ -599,13 +705,9 @@ function OrderSuccess() {
         </div>
 
 
-
-        {/* ===================================
-            BUTTONS
-        =================================== */}
+        {/* BUTTONS */}
 
         <div className="success-buttons">
-
 
           <Link
             to="/products"
@@ -613,7 +715,6 @@ function OrderSuccess() {
           >
             Continue Shopping
           </Link>
-
 
           <Link
             to="/"

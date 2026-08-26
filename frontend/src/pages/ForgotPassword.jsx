@@ -1,97 +1,84 @@
 import { Link } from "react-router-dom";
 import { useState } from "react";
 import axios from "axios";
+import { API_BASE_URL } from "../config/api";
 
 function ForgotPassword() {
+  const [email, setEmail] = useState("");
 
-  const [email, setEmail] =
-    useState("");
+  const [error, setError] = useState("");
 
-  const [error, setError] =
-    useState("");
+  const [success, setSuccess] = useState("");
 
-  const [success, setSuccess] =
-    useState("");
-
-  const [loading, setLoading] =
-    useState(false);
-
+  const [loading, setLoading] = useState(false);
 
   // =========================================
   // HANDLE FORGOT PASSWORD
   // =========================================
 
-  const handleForgotPassword =
-    async (e) => {
+  const handleForgotPassword = async (e) => {
+    e.preventDefault();
 
-      e.preventDefault();
+    setError("");
+    setSuccess("");
 
-      setError("");
-      setSuccess("");
+    // =======================================
+    // VALIDATION
+    // =======================================
 
+    if (!email.trim()) {
+      setError(
+        "Please enter your email address."
+      );
 
-      if (!email.trim()) {
+      return;
+    }
 
-        setError(
-          "Please enter your email address."
-        );
+    try {
+      setLoading(true);
 
-        return;
+      // =====================================
+      // FORGOT PASSWORD API
+      // =====================================
 
-      }
+      const response = await axios.post(
+        `${API_BASE_URL}/auth/forgot-password`,
+        {
+          email: email.trim().toLowerCase(),
+        }
+      );
 
+      setSuccess(
+        response.data.message ||
+          "Password reset link has been sent to your email."
+      );
 
-      try {
+      // =====================================
+      // CLEAR EMAIL
+      // =====================================
 
-        setLoading(true);
+      setEmail("");
 
+    } catch (error) {
+      console.error(
+        "Forgot Password Error:",
+        error
+      );
 
-        const response =
-          await axios.post(
-            "http://localhost:5000/api/auth/forgot-password",
-            {
-              email:
-                email.trim().toLowerCase(),
-            }
-          );
-
-
-        setSuccess(
-          response.data.message
-        );
-
-
-        setEmail("");
-
-
-      } catch (error) {
-
-        console.error(
-          "Forgot Password Error:",
-          error
-        );
-
-
-        setError(
-          error.response?.data?.message ||
+      setError(
+        error.response?.data?.message ||
           "Something went wrong. Please try again."
-        );
+      );
 
-      } finally {
-
-        setLoading(false);
-
-      }
-
-    };
-
+    } finally {
+      setLoading(false);
+    }
+  };
 
   return (
-
     <main className="auth-page">
 
       <section className="auth-card">
-
 
         {/* =================================
             HEADER
@@ -124,6 +111,7 @@ function ForgotPassword() {
           onSubmit={handleForgotPassword}
         >
 
+          {/* EMAIL */}
 
           <div className="auth-field">
 
@@ -152,7 +140,6 @@ function ForgotPassword() {
           ================================= */}
 
           {error && (
-
             <div className="login-error-box">
 
               <span>
@@ -164,7 +151,6 @@ function ForgotPassword() {
               </p>
 
             </div>
-
           )}
 
 
@@ -173,13 +159,9 @@ function ForgotPassword() {
           ================================= */}
 
           {success && (
-
             <p className="auth-success">
-
               {success}
-
             </p>
-
           )}
 
 
@@ -192,14 +174,11 @@ function ForgotPassword() {
             className="auth-button"
             disabled={loading}
           >
-
             {loading
               ? "Sending..."
               : "Send Reset Link"
             }
-
           </button>
-
 
         </form>
 
@@ -220,13 +199,10 @@ function ForgotPassword() {
 
         </p>
 
-
       </section>
 
     </main>
-
   );
-
 }
 
 export default ForgotPassword;

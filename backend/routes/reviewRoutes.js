@@ -7,11 +7,14 @@ import {
   protect,
 } from "../middleware/authMiddleware.js";
 
+
 const router = express.Router();
 
 
 // =========================================================
 // GET REVIEWS FOR PRODUCT
+// GET /api/reviews/product/:productId
+// PUBLIC
 // =========================================================
 
 router.get(
@@ -36,8 +39,10 @@ router.get(
           });
 
 
-      res.json({
+      res.status(200).json({
+
         reviews,
+
       });
 
 
@@ -64,6 +69,8 @@ router.get(
 
 // =========================================================
 // ADD REVIEW
+// POST /api/reviews/product/:productId
+// AUTHENTICATED USERS ONLY
 // =========================================================
 
 router.post(
@@ -80,26 +87,14 @@ router.post(
 
 
       // =======================================
-      // GET USER ID
+      // GET AUTHENTICATED USER ID
       // =======================================
 
       const userId =
-        req.user?._id ||
-        req.user?.id ||
-        req.user?.userId;
+        req.user?.id;
 
-
-      // =======================================
-      // CHECK USER ID
-      // =======================================
 
       if (!userId) {
-
-        console.error(
-          "Review Error: User ID missing from token.",
-          req.user
-        );
-
 
         return res.status(401).json({
 
@@ -112,11 +107,12 @@ router.post(
 
 
       // =======================================
-      // VALIDATION
+      // VALIDATE REVIEW
       // =======================================
 
       if (
-        !rating ||
+        rating === undefined ||
+        rating === null ||
         !comment ||
         !comment.trim()
       ) {
@@ -140,10 +136,13 @@ router.post(
 
 
       // =======================================
-      // RATING VALIDATION
+      // VALIDATE RATING
       // =======================================
 
       if (
+        !Number.isFinite(
+          numericRating
+        ) ||
         numericRating < 1 ||
         numericRating > 5
       ) {
@@ -209,13 +208,12 @@ router.post(
 
 
       // =======================================
-      // USER NAME
+      // GET USER NAME
       // =======================================
 
       const userName =
         req.user?.name ||
         req.user?.fullName ||
-        req.user?.username ||
         "Glowry Customer";
 
 
@@ -244,7 +242,7 @@ router.post(
 
 
       // =======================================
-      // GET ALL REVIEWS
+      // GET ALL PRODUCT REVIEWS
       // =======================================
 
       const allReviews =
@@ -257,7 +255,7 @@ router.post(
 
 
       // =======================================
-      // TOTAL REVIEWS
+      // CALCULATE REVIEW COUNT
       // =======================================
 
       const totalReviews =
@@ -265,7 +263,7 @@ router.post(
 
 
       // =======================================
-      // TOTAL RATING
+      // CALCULATE TOTAL RATING
       // =======================================
 
       const totalRating =
@@ -286,7 +284,7 @@ router.post(
 
 
       // =======================================
-      // AVERAGE RATING
+      // CALCULATE AVERAGE RATING
       // =======================================
 
       const averageRating =
@@ -305,7 +303,7 @@ router.post(
 
 
       // =======================================
-      // UPDATE PRODUCT
+      // UPDATE PRODUCT RATING
       // =======================================
 
       await Product.findByIdAndUpdate(
@@ -412,6 +410,8 @@ router.post(
 
 // =========================================================
 // DELETE OWN REVIEW
+// DELETE /api/reviews/:reviewId
+// AUTHENTICATED USERS ONLY
 // =========================================================
 
 router.delete(
@@ -422,13 +422,11 @@ router.delete(
     try {
 
       // =======================================
-      // GET USER ID
+      // GET AUTHENTICATED USER ID
       // =======================================
 
       const userId =
-        req.user?._id ||
-        req.user?.id ||
-        req.user?.userId;
+        req.user?.id;
 
 
       if (!userId) {
@@ -515,7 +513,7 @@ router.delete(
 
 
       // =======================================
-      // TOTAL REVIEWS
+      // CALCULATE REVIEW COUNT
       // =======================================
 
       const totalReviews =
@@ -523,7 +521,7 @@ router.delete(
 
 
       // =======================================
-      // TOTAL RATING
+      // CALCULATE TOTAL RATING
       // =======================================
 
       const totalRating =
@@ -544,7 +542,7 @@ router.delete(
 
 
       // =======================================
-      // AVERAGE RATING
+      // CALCULATE AVERAGE RATING
       // =======================================
 
       const averageRating =
@@ -563,7 +561,7 @@ router.delete(
 
 
       // =======================================
-      // UPDATE PRODUCT
+      // UPDATE PRODUCT RATING
       // =======================================
 
       await Product.findByIdAndUpdate(
@@ -587,7 +585,7 @@ router.delete(
       // RESPONSE
       // =======================================
 
-      res.json({
+      res.status(200).json({
 
         message:
           "Review deleted successfully.",

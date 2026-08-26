@@ -1,3 +1,4 @@
+
 import {
   Link,
   useNavigate,
@@ -10,6 +11,10 @@ import {
 } from "react";
 
 import axios from "axios";
+
+import {
+  API_BASE_URL,
+} from "../config/api";
 
 
 function TrackOrder() {
@@ -129,7 +134,7 @@ function TrackOrder() {
         const response =
           await axios.get(
 
-            `http://localhost:5000/api/orders/${orderId}`,
+            `${API_BASE_URL}/orders/${orderId}`,
 
             {
               headers: {
@@ -974,3 +979,4 @@ function TrackOrder() {
 
 
 export default TrackOrder;
+

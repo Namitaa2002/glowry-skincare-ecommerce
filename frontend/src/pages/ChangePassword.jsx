@@ -2,6 +2,8 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
 
+import { API_BASE_URL } from "../config/api";
+
 function ChangePassword() {
   const navigate = useNavigate();
 
@@ -68,9 +70,9 @@ function ChangePassword() {
       confirmPassword,
     } = formData;
 
-    // ---------------------------------------
+    // =========================================
     // VALIDATION
-    // ---------------------------------------
+    // =========================================
 
     if (
       !currentPassword ||
@@ -100,9 +102,9 @@ function ChangePassword() {
       return;
     }
 
-    // ---------------------------------------
+    // =========================================
     // GET LOGGED IN USER
-    // ---------------------------------------
+    // =========================================
 
     const savedUser = localStorage.getItem(
       "glowryLoggedInUser"
@@ -117,10 +119,10 @@ function ChangePassword() {
 
     try {
       user = JSON.parse(savedUser);
-    } catch (error) {
+    } catch (parseError) {
       console.error(
         "User Parse Error:",
-        error
+        parseError
       );
 
       localStorage.removeItem(
@@ -138,15 +140,15 @@ function ChangePassword() {
       return;
     }
 
-    // ---------------------------------------
+    // =========================================
     // API REQUEST
-    // ---------------------------------------
+    // =========================================
 
     try {
       setLoading(true);
 
       const response = await axios.put(
-        `http://localhost:5000/api/auth/change-password/${user.id}`,
+        `${API_BASE_URL}/auth/change-password/${user.id}`,
         {
           currentPassword,
           newPassword,
@@ -164,13 +166,14 @@ function ChangePassword() {
         confirmPassword: "",
       });
 
-      // -------------------------------------
+      // =======================================
       // GO BACK TO PROFILE
-      // -------------------------------------
+      // =======================================
 
       setTimeout(() => {
         navigate("/dashboard/profile");
       }, 1500);
+
     } catch (error) {
       console.error(
         "Change Password Error:",
@@ -181,6 +184,7 @@ function ChangePassword() {
         error.response?.data?.message ||
           "Failed to change password."
       );
+
     } finally {
       setLoading(false);
     }
@@ -304,6 +308,7 @@ function ChangePassword() {
                   onChange={handleChange}
                   placeholder="Enter current password"
                   autoComplete="current-password"
+                  disabled={loading}
                 />
 
                 <button
@@ -317,6 +322,7 @@ function ChangePassword() {
                       ? "Hide password"
                       : "Show password"
                   }
+                  disabled={loading}
                 >
                   {showPassword.current
                     ? "🙈"
@@ -352,6 +358,7 @@ function ChangePassword() {
                   onChange={handleChange}
                   placeholder="Enter new password"
                   autoComplete="new-password"
+                  disabled={loading}
                 />
 
                 <button
@@ -365,6 +372,7 @@ function ChangePassword() {
                       ? "Hide password"
                       : "Show password"
                   }
+                  disabled={loading}
                 >
                   {showPassword.new
                     ? "🙈"
@@ -400,6 +408,7 @@ function ChangePassword() {
                   onChange={handleChange}
                   placeholder="Confirm new password"
                   autoComplete="new-password"
+                  disabled={loading}
                 />
 
                 <button
@@ -413,6 +422,7 @@ function ChangePassword() {
                       ? "Hide password"
                       : "Show password"
                   }
+                  disabled={loading}
                 >
                   {showPassword.confirm
                     ? "🙈"
@@ -498,7 +508,6 @@ function ChangePassword() {
             </p>
 
           </div>
-
 
         </div>
 

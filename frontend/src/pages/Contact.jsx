@@ -1,72 +1,44 @@
 import { useState } from "react";
 import axios from "axios";
+import { API_BASE_URL } from "../config/api";
 
 function Contact() {
-
   const [formData, setFormData] = useState({
-
     name: "",
-
     email: "",
-
     subject: "",
-
     message: "",
-
   });
 
-
-  const [error, setError] =
-    useState("");
-
-  const [success, setSuccess] =
-    useState("");
-
-  const [loading, setLoading] =
-    useState(false);
-
+  const [error, setError] = useState("");
+  const [success, setSuccess] = useState("");
+  const [loading, setLoading] = useState(false);
 
   // =========================================
   // HANDLE CHANGE
   // =========================================
 
   const handleChange = (e) => {
-
-    const {
-      name,
-      value,
-    } = e.target;
-
+    const { name, value } = e.target;
 
     setFormData((previous) => ({
-
       ...previous,
-
       [name]: value,
-
     }));
 
-
     setError("");
-
     setSuccess("");
-
   };
-
 
   // =========================================
   // HANDLE SUBMIT
   // =========================================
 
   const handleSubmit = async (e) => {
-
     e.preventDefault();
 
-
     setError("");
-
     setSuccess("");
-
 
     // =======================================
     // VALIDATION
@@ -78,96 +50,57 @@ function Contact() {
       !formData.subject.trim() ||
       !formData.message.trim()
     ) {
-
-      setError(
-        "Please fill all fields."
-      );
-
+      setError("Please fill all fields.");
       return;
-
     }
 
-
     try {
-
       setLoading(true);
 
-
-      const response =
-        await axios.post(
-
-          "http://localhost:5000/api/contact",
-
-          {
-
-            name:
-              formData.name.trim(),
-
-            email:
-              formData.email.trim(),
-
-            subject:
-              formData.subject.trim(),
-
-            message:
-              formData.message.trim(),
-
-          }
-
-        );
-
-
-      setSuccess(
-        response.data.message
+      const response = await axios.post(
+        `${API_BASE_URL}/contact`,
+        {
+          name: formData.name.trim(),
+          email: formData.email.trim(),
+          subject: formData.subject.trim(),
+          message: formData.message.trim(),
+        }
       );
 
+      setSuccess(
+        response.data.message ||
+          "Your message has been sent successfully!"
+      );
 
       // =====================================
       // CLEAR FORM
       // =====================================
 
       setFormData({
-
         name: "",
-
         email: "",
-
         subject: "",
-
         message: "",
-
       });
 
-
     } catch (error) {
-
       console.error(
         "Contact Error:",
         error
       );
 
-
       setError(
-
         error.response?.data?.message ||
-
-        "Something went wrong. Please try again."
-
+          "Something went wrong. Please try again."
       );
 
     } finally {
-
       setLoading(false);
-
     }
-
   };
 
-
   return (
-
     <main className="contact-page">
-
 
       {/* ===================================
           HEADER
@@ -198,13 +131,11 @@ function Contact() {
 
       <section className="contact-container">
 
-
         {/* =================================
             CONTACT INFORMATION
         ================================= */}
 
         <div className="contact-info">
-
 
           <div className="contact-info-card">
 
@@ -261,7 +192,6 @@ function Contact() {
 
           </div>
 
-
         </div>
 
 
@@ -270,7 +200,6 @@ function Contact() {
         ================================= */}
 
         <div className="contact-form-wrapper">
-
 
           <h2>
             Send Us a Message
@@ -282,7 +211,6 @@ function Contact() {
             onSubmit={handleSubmit}
           >
 
-
             {/* NAME */}
 
             <div className="auth-field">
@@ -292,19 +220,12 @@ function Contact() {
               </label>
 
               <input
-
                 type="text"
-
                 name="name"
-
                 value={formData.name}
-
                 onChange={handleChange}
-
                 placeholder="Enter your name"
-
                 required
-
               />
 
             </div>
@@ -319,21 +240,13 @@ function Contact() {
               </label>
 
               <input
-
                 type="email"
-
                 name="email"
-
                 value={formData.email}
-
                 onChange={handleChange}
-
                 placeholder="Enter your email"
-
                 autoComplete="email"
-
                 required
-
               />
 
             </div>
@@ -348,19 +261,12 @@ function Contact() {
               </label>
 
               <input
-
                 type="text"
-
                 name="subject"
-
                 value={formData.subject}
-
                 onChange={handleChange}
-
                 placeholder="What can we help you with?"
-
                 required
-
               />
 
             </div>
@@ -375,19 +281,12 @@ function Contact() {
               </label>
 
               <textarea
-
                 name="message"
-
                 value={formData.message}
-
                 onChange={handleChange}
-
                 placeholder="Write your message here..."
-
                 rows="6"
-
                 required
-
               />
 
             </div>
@@ -396,7 +295,6 @@ function Contact() {
             {/* ERROR */}
 
             {error && (
-
               <div className="login-error-box">
 
                 <span>
@@ -408,55 +306,39 @@ function Contact() {
                 </p>
 
               </div>
-
             )}
 
 
             {/* SUCCESS */}
 
             {success && (
-
               <p className="auth-success">
-
                 {success}
-
               </p>
-
             )}
 
 
             {/* BUTTON */}
 
             <button
-
               type="submit"
-
               className="auth-button"
-
               disabled={loading}
-
             >
-
               {loading
                 ? "Sending..."
                 : "Send Message"
               }
-
             </button>
-
 
           </form>
 
         </div>
 
-
       </section>
 
-
     </main>
-
   );
-
 }
 
 export default Contact;

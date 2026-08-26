@@ -1,64 +1,43 @@
+
 import {
   Link,
   useNavigate,
 } from "react-router-dom";
 
-import {
-  useState,
-} from "react";
+import { useState } from "react";
 
 import axios from "axios";
+
+import { API_BASE_URL } from "../config/api";
 
 
 function Login() {
 
-  const navigate =
-    useNavigate();
+  const navigate = useNavigate();
 
 
   // =========================================
   // FORM DATA
   // =========================================
 
-  const [
-    formData,
-    setFormData,
-  ] = useState({
+  const [formData, setFormData] = useState({
 
     email: "",
+
     password: "",
 
   });
 
 
   // =========================================
-  // ERROR
+  // STATE
   // =========================================
 
-  const [
-    error,
-    setError,
-  ] = useState("");
+  const [error, setError] = useState("");
 
+  const [loading, setLoading] = useState(false);
 
-  // =========================================
-  // LOADING
-  // =========================================
-
-  const [
-    loading,
-    setLoading,
-  ] = useState(false);
-
-
-  // =========================================
-  // SHOW PASSWORD
-  // =========================================
-
-  const [
-    showPassword,
-    setShowPassword,
-  ] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
 
 
   // =========================================
@@ -73,18 +52,15 @@ function Login() {
     } = e.target;
 
 
-    setFormData(
-      (previous) => ({
+    setFormData((previous) => ({
 
-        ...previous,
+      ...previous,
 
-        [name]: value,
+      [name]: value,
 
-      })
-    );
+    }));
 
 
-    // Clear old error
     setError("");
 
   };
@@ -94,26 +70,95 @@ function Login() {
   // LOGIN
   // =========================================
 
-  const handleLogin =
-    async (e) => {
+  const handleLogin = async (e) => {
 
-      e.preventDefault();
+    e.preventDefault();
 
-
-      const {
-        email,
-        password,
-      } = formData;
+    setError("");
 
 
-      // =======================================
-      // VALIDATION
-      // =======================================
+    const email =
+      formData.email.trim().toLowerCase();
 
-      if (!email.trim() || !password.trim()) {
+    const password =
+      formData.password;
+
+
+    // =======================================
+    // VALIDATION
+    // =======================================
+
+    if (!email || !password.trim()) {
+
+      setError(
+        "Please enter your email and password."
+      );
+
+      return;
+
+    }
+
+
+    if (
+      !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(
+        email
+      )
+    ) {
+
+      setError(
+        "Please enter a valid email address."
+      );
+
+      return;
+
+    }
+
+
+    try {
+
+      setLoading(true);
+
+
+      // =====================================
+      // LOGIN REQUEST
+      // =====================================
+
+      const response = await axios.post(
+
+        `${API_BASE_URL}/auth/login`,
+
+        {
+
+          email,
+
+          password,
+
+        }
+
+      );
+
+
+      console.log(
+        "Login Response:",
+        response.data
+      );
+
+
+      const user =
+        response.data?.user;
+
+      const token =
+        response.data?.token;
+
+
+      // =====================================
+      // CHECK USER
+      // =====================================
+
+      if (!user) {
 
         setError(
-          "Please enter your email and password."
+          "Login failed. User information was not received."
         );
 
         return;
@@ -121,265 +166,240 @@ function Login() {
       }
 
 
-      try {
+      // =====================================
+      // ADMIN ACCOUNT
+      // =====================================
 
-        setLoading(true);
+      if (user.role === "admin") {
 
-        setError("");
-
-
-        // =====================================
-        // LOGIN REQUEST
-        // =====================================
-
-        const response =
-          await axios.post(
-
-            "http://localhost:5000/api/auth/login",
-
-            {
-
-              email:
-                email.trim().toLowerCase(),
-
-              password:
-                password,
-
-            }
-
-          );
-
-
-        console.log(
-          "Login Response:",
-          response.data
+        setError(
+          "This is an admin account. Please use the Admin Login page."
         );
 
+        return;
 
-        // =====================================
-        // GET USER + TOKEN
-        // =====================================
-
-        const user =
-          response.data?.user;
-
-        const token =
-          response.data?.token;
+      }
 
 
-        // =====================================
-        // CHECK USER
-        // =====================================
+      // =====================================
+      // CHECK TOKEN
+      // =====================================
 
-        if (!user) {
+      if (!token) {
+
+        setError(
+          "Login failed. Authentication token was not received."
+        );
+
+        return;
+
+      }
+
+
+      // =====================================
+      // USER ID
+      // =====================================
+
+      const userId =
+        user.id ||
+        user._id;
+
+
+      if (!userId) {
+
+        setError(
+          "Login failed. User ID was not received."
+        );
+
+        return;
+
+      }
+
+
+      // =====================================
+      // SAVE TOKEN
+      // =====================================
+
+      localStorage.setItem(
+        "glowryToken",
+        token
+      );
+
+
+      // =====================================
+      // SAVE USER
+      // =====================================
+
+      const loggedInUser = {
+
+        id: userId,
+
+        fullName:
+          user.fullName ||
+          user.name ||
+          "",
+
+        name:
+          user.name ||
+          user.fullName ||
+          "",
+
+        email:
+          user.email ||
+          email,
+
+        phone:
+          user.phone ||
+          "",
+
+        role:
+          user.role ||
+          "user",
+
+      };
+
+
+      localStorage.setItem(
+
+        "glowryLoggedInUser",
+
+        JSON.stringify(
+          loggedInUser
+        )
+
+      );
+
+
+      // =====================================
+      // CLEAR OLD ADMIN DATA
+      // =====================================
+
+      localStorage.removeItem(
+        "glowryAdminToken"
+      );
+
+      localStorage.removeItem(
+        "glowryAdminUser"
+      );
+
+
+      // =====================================
+      // SUCCESS
+      // =====================================
+
+      navigate("/dashboard");
+
+
+    } catch (error) {
+
+      console.error(
+        "Login Error:",
+        error
+      );
+
+
+      console.error(
+        "Backend Response:",
+        error.response?.data
+      );
+
+
+      // =====================================
+      // BACKEND ERROR
+      // =====================================
+
+      if (error.response) {
+
+        const status =
+          error.response.status;
+
+        const backendMessage =
+          error.response.data?.message;
+
+
+        if (status === 404) {
 
           setError(
-            "Login failed. User information was not received."
-          );
 
-          return;
+            backendMessage ||
+
+            "No account found with this email address."
+
+          );
 
         }
 
-
-        // =====================================
-        // ADMIN ACCOUNT CHECK
-        // =====================================
-
-        if (user.role === "admin") {
+        else if (status === 401) {
 
           setError(
-            "This is an admin account. Please use the Admin Login page."
-          );
 
-          return;
+            backendMessage ||
+
+            "Invalid email or password."
+
+          );
 
         }
 
-
-        // =====================================
-        // CHECK TOKEN
-        // =====================================
-
-        if (!token) {
+        else if (status === 400) {
 
           setError(
-            "Login failed. Authentication token was not received."
-          );
 
-          return;
+            backendMessage ||
 
-        }
+            "Please enter valid login details."
 
-
-        // =====================================
-        // SAVE JWT TOKEN
-        // =====================================
-
-        localStorage.setItem(
-          "glowryToken",
-          token
-        );
-
-
-        // =====================================
-        // SAVE LOGGED-IN USER
-        // =====================================
-
-        localStorage.setItem(
-
-          "glowryLoggedInUser",
-
-          JSON.stringify({
-
-            id:
-              user.id,
-
-            fullName:
-              user.fullName ||
-              user.name,
-
-            name:
-              user.name ||
-              user.fullName,
-
-            email:
-              user.email,
-
-            phone:
-              user.phone || "",
-
-            role:
-              user.role || "user",
-
-          })
-
-        );
-
-
-        // =====================================
-        // NOTIFY OTHER COMPONENTS
-        // =====================================
-
-        window.dispatchEvent(
-          new Event("storage")
-        );
-
-
-        // =====================================
-        // GO TO USER DASHBOARD
-        // =====================================
-
-        navigate(
-          "/dashboard"
-        );
-
-
-      } catch (error) {
-
-        console.error(
-          "Login Error:",
-          error
-        );
-
-
-        console.error(
-          "Backend Response:",
-          error.response?.data
-        );
-
-
-        // =====================================
-        // BACKEND ERROR MESSAGE
-        // =====================================
-
-        if (error.response) {
-
-          const status =
-            error.response.status;
-
-          const backendMessage =
-            error.response.data?.message;
-
-
-          // User not found
-          if (status === 404) {
-
-            setError(
-              backendMessage ||
-              "No account found with this email address."
-            );
-
-          }
-
-
-          // Wrong password
-          else if (status === 401) {
-
-            setError(
-              backendMessage ||
-              "Invalid password. Please try again."
-            );
-
-          }
-
-
-          // Validation error
-          else if (status === 400) {
-
-            setError(
-              backendMessage ||
-              "Please enter valid login details."
-            );
-
-          }
-
-
-          // Other backend errors
-          else {
-
-            setError(
-              backendMessage ||
-              "Unable to login. Please try again."
-            );
-
-          }
-
-        }
-
-
-        // =====================================
-        // SERVER NOT AVAILABLE
-        // =====================================
-
-        else if (error.request) {
-
-          setError(
-            "Unable to connect to the server. Please make sure the backend server is running."
           );
 
         }
-
-
-        // =====================================
-        // UNKNOWN ERROR
-        // =====================================
 
         else {
 
           setError(
-            "Login failed. Please try again."
+
+            backendMessage ||
+
+            "Unable to login. Please try again."
+
           );
 
         }
 
-      } finally {
+      }
 
-        setLoading(false);
+
+      // =====================================
+      // SERVER ERROR
+      // =====================================
+
+      else if (error.request) {
+
+        setError(
+          "Unable to connect to the server. Please make sure the backend server is running."
+        );
 
       }
 
-    };
+
+      // =====================================
+      // UNKNOWN ERROR
+      // =====================================
+
+      else {
+
+        setError(
+          "Login failed. Please try again."
+        );
+
+      }
+
+    } finally {
+
+      setLoading(false);
+
+    }
+
+  };
 
 
   // =========================================
@@ -410,11 +430,11 @@ function Login() {
 
 
           <p>
-            Continue your skincare journey with Glowry.
+            Continue your skincare journey
+            with Glowry.
           </p>
 
         </div>
-
 
 
         {/* =====================================
@@ -431,30 +451,31 @@ function Login() {
 
           <div className="auth-field">
 
-            <label>
+            <label htmlFor="login-email">
               Email Address
             </label>
 
 
             <input
+              id="login-email"
               type="email"
               name="email"
               value={formData.email}
               onChange={handleChange}
               placeholder="Enter your email"
               autoComplete="email"
+              disabled={loading}
               required
             />
 
           </div>
 
 
-
           {/* PASSWORD */}
 
           <div className="auth-field">
 
-            <label>
+            <label htmlFor="login-password">
               Password
             </label>
 
@@ -462,6 +483,7 @@ function Login() {
             <div className="password-input-wrapper">
 
               <input
+                id="login-password"
                 type={
                   showPassword
                     ? "text"
@@ -472,6 +494,7 @@ function Login() {
                 onChange={handleChange}
                 placeholder="Enter password"
                 autoComplete="current-password"
+                disabled={loading}
                 required
               />
 
@@ -481,8 +504,15 @@ function Login() {
                 className="password-toggle"
                 onClick={() =>
                   setShowPassword(
-                    !showPassword
+                    (previous) =>
+                      !previous
                   )
+                }
+                disabled={loading}
+                aria-label={
+                  showPassword
+                    ? "Hide password"
+                    : "Show password"
                 }
               >
 
@@ -497,7 +527,6 @@ function Login() {
           </div>
 
 
-
           {/* FORGOT PASSWORD */}
 
           <div className="auth-forgot">
@@ -507,7 +536,6 @@ function Login() {
             </Link>
 
           </div>
-
 
 
           {/* ERROR */}
@@ -530,7 +558,6 @@ function Login() {
           )}
 
 
-
           {/* LOGIN BUTTON */}
 
           <button
@@ -547,7 +574,6 @@ function Login() {
 
 
         </form>
-
 
 
         {/* REGISTER */}
@@ -575,3 +601,4 @@ function Login() {
 
 
 export default Login;
+

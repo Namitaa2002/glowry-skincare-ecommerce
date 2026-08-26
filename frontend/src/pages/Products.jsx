@@ -1,9 +1,12 @@
-
 import { useEffect, useState } from "react";
 import axios from "axios";
 
 import ProductCard from "../components/ProductCard";
 
+import {
+  API_BASE_URL,
+  SERVER_BASE_URL,
+} from "../config/api";
 
 // =========================================
 // PRODUCTS PAGE
@@ -23,7 +26,6 @@ function Products() {
   const [error, setError] =
     useState("");
 
-
   // =========================================
   // SEARCH & FILTER STATES
   // =========================================
@@ -40,7 +42,6 @@ function Products() {
   const [sortBy, setSortBy] =
     useState("featured");
 
-
   // =========================================
   // FETCH PRODUCTS
   // =========================================
@@ -52,20 +53,16 @@ function Products() {
       try {
 
         setLoading(true);
-
         setError("");
-
 
         const response =
           await axios.get(
-            "http://localhost:5000/api/products"
+            `${API_BASE_URL}/products`
           );
-
 
         setProducts(
           response.data
         );
-
 
       } catch (err) {
 
@@ -74,11 +71,9 @@ function Products() {
           err
         );
 
-
         setError(
           "Unable to load products. Please try again."
         );
-
 
       } finally {
 
@@ -88,11 +83,9 @@ function Products() {
 
     };
 
-
     fetchProducts();
 
   }, []);
-
 
   // =========================================
   // IMAGE URL
@@ -101,28 +94,26 @@ function Products() {
   const getImageUrl = (image) => {
 
     if (!image) {
-
       return "";
-
     }
 
-
-    // Backend image path:
-    // /images/cleanser.jpg
-
+    // If image is already a complete URL
     if (
-      image.startsWith("http")
+      image.startsWith("http://") ||
+      image.startsWith("https://")
     ) {
-
       return image;
-
     }
 
+    // Backend image path
+    if (image.startsWith("/")) {
+      return `${SERVER_BASE_URL}${image}`;
+    }
 
-    return `http://localhost:5000${image}`;
+    // Filename only
+    return `${SERVER_BASE_URL}/images/${image}`;
 
   };
-
 
   // =========================================
   // FILTER PRODUCTS
@@ -138,19 +129,16 @@ function Products() {
             search.toLowerCase()
           );
 
-
       const matchesCategory =
         selectedCategory === "All" ||
         product.category ===
           selectedCategory;
-
 
       const matchesSkinType =
         selectedSkinType === "All" ||
         product.skinTypes?.includes(
           selectedSkinType
         );
-
 
       return (
         matchesSearch &&
@@ -159,7 +147,6 @@ function Products() {
       );
 
     });
-
 
   // =========================================
   // SORT PRODUCTS
@@ -180,7 +167,6 @@ function Products() {
 
         }
 
-
         if (
           sortBy === "price-high"
         ) {
@@ -191,7 +177,6 @@ function Products() {
           );
 
         }
-
 
         if (
           sortBy === "rating"
@@ -204,12 +189,10 @@ function Products() {
 
         }
 
-
         return 0;
 
       }
     );
-
 
   // =========================================
   // LOADING
@@ -239,7 +222,6 @@ function Products() {
 
         </section>
 
-
         <div className="products-loading">
 
           <p>
@@ -253,7 +235,6 @@ function Products() {
     );
 
   }
-
 
   // =========================================
   // ERROR
@@ -277,7 +258,6 @@ function Products() {
 
         </section>
 
-
         <div className="no-products">
 
           <h3>
@@ -296,7 +276,6 @@ function Products() {
 
   }
 
-
   // =========================================
   // PAGE
   // =========================================
@@ -304,7 +283,6 @@ function Products() {
   return (
 
     <main className="products-page">
-
 
       {/* =====================================
           PAGE HEADER
@@ -328,14 +306,11 @@ function Products() {
 
       </section>
 
-
-
       {/* =====================================
           SEARCH & FILTER
       ===================================== */}
 
       <section className="products-toolbar">
-
 
         {/* SEARCH */}
 
@@ -357,8 +332,6 @@ function Products() {
           />
 
         </div>
-
-
 
         {/* CATEGORY */}
 
@@ -417,8 +390,6 @@ function Products() {
 
         </div>
 
-
-
         {/* SKIN TYPE */}
 
         <div className="skin-type-filter">
@@ -468,8 +439,6 @@ function Products() {
 
         </div>
 
-
-
         {/* SORT */}
 
         <div className="sort-filter">
@@ -509,8 +478,6 @@ function Products() {
 
       </section>
 
-
-
       {/* =====================================
           PRODUCT COUNT
       ===================================== */}
@@ -530,8 +497,6 @@ function Products() {
         </p>
 
       </div>
-
-
 
       {/* =====================================
           PRODUCTS
@@ -558,7 +523,11 @@ function Products() {
                   product.name
                 }
 
-               image={`http://localhost:5000${product.image}`}
+                image={
+                  getImageUrl(
+                    product.image
+                  )
+                }
 
                 price={
                   product.price
@@ -572,7 +541,7 @@ function Products() {
                   product.rating
                 }
 
-               reviews={
+                reviews={
                   product.reviews > 0
                     ? product.reviews
                     : 12 + (
@@ -580,7 +549,8 @@ function Products() {
                           .split("")
                           .reduce(
                             (sum, char) =>
-                              sum + char.charCodeAt(0),
+                              sum +
+                              char.charCodeAt(0),
                             0
                           ) % 89
                       )
@@ -596,8 +566,6 @@ function Products() {
           )}
 
         </div>
-
-
 
         {/* =================================
             NO RESULTS
@@ -622,13 +590,10 @@ function Products() {
 
       </section>
 
-
     </main>
 
   );
 
 }
 
-
 export default Products;
-

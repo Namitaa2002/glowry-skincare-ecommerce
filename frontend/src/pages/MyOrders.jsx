@@ -10,11 +10,11 @@ import {
 
 import axios from "axios";
 
+import { API_BASE_URL } from "../config/api";
 
 function MyOrders() {
 
   const navigate = useNavigate();
-
 
   // =========================================
   // ORDERS
@@ -22,20 +22,17 @@ function MyOrders() {
 
   const [orders, setOrders] = useState([]);
 
-
   // =========================================
   // LOADING
   // =========================================
 
   const [loading, setLoading] = useState(true);
 
-
   // =========================================
   // ERROR
   // =========================================
 
   const [error, setError] = useState("");
-
 
   // =========================================
   // FETCH ORDERS
@@ -50,7 +47,6 @@ function MyOrders() {
         setLoading(true);
         setError("");
 
-
         // =====================================
         // GET LOGGED IN USER
         // =====================================
@@ -60,15 +56,12 @@ function MyOrders() {
             "glowryLoggedInUser"
           );
 
-
         if (!savedUser) {
 
           navigate("/login");
 
           return;
-
         }
-
 
         // =====================================
         // PARSE USER
@@ -88,23 +81,18 @@ function MyOrders() {
             parseError
           );
 
-
           localStorage.removeItem(
             "glowryLoggedInUser"
           );
-
 
           localStorage.removeItem(
             "glowryToken"
           );
 
-
           navigate("/login");
 
           return;
-
         }
-
 
         // =====================================
         // CHECK USER ID
@@ -117,9 +105,7 @@ function MyOrders() {
           );
 
           return;
-
         }
-
 
         // =====================================
         // GET JWT TOKEN
@@ -130,18 +116,15 @@ function MyOrders() {
             "glowryToken"
           );
 
-
         console.log(
           "Logged In User:",
           user
         );
 
-
         console.log(
           "Glowry Token:",
           token
         );
-
 
         // =====================================
         // CHECK TOKEN
@@ -153,20 +136,17 @@ function MyOrders() {
             "Authentication required. Please login again."
           );
 
-
           navigate("/login");
 
           return;
-
         }
-
 
         // =====================================
         // FETCH USER ORDERS
         // =====================================
 
         const response = await axios.get(
-          "http://localhost:5000/api/orders/user",
+          `${API_BASE_URL}/orders/user`,
           {
             headers: {
               Authorization: `Bearer ${token}`,
@@ -179,23 +159,15 @@ function MyOrders() {
           response.data
         );
 
-
         // =====================================
         // SAVE ORDERS
         // =====================================
 
         setOrders(
-
-          Array.isArray(
-            response.data
-          )
-
+          Array.isArray(response.data)
             ? response.data
-
             : []
-
         );
-
 
       } catch (error) {
 
@@ -222,21 +194,15 @@ function MyOrders() {
           "================================="
         );
 
-
         // =====================================
         // ERROR MESSAGE
         // =====================================
 
         setError(
-
           error.response?.data?.message ||
-
           error.response?.data?.error ||
-
           "Unable to load your orders. Please try again."
-
         );
-
 
       } finally {
 
@@ -246,12 +212,9 @@ function MyOrders() {
 
     };
 
-
     fetchOrders();
 
-
   }, [navigate]);
-
 
   // =========================================
   // LOADING
@@ -263,18 +226,15 @@ function MyOrders() {
 
       <main className="my-orders-page">
 
-
         <section className="orders-header">
 
           <p className="section-small-title">
             YOUR GLOWRY
           </p>
 
-
           <h1>
             My Orders
           </h1>
-
 
           <p>
             Track and manage your Glowry
@@ -283,18 +243,15 @@ function MyOrders() {
 
         </section>
 
-
         <section className="empty-orders">
 
           <div className="empty-orders-icon">
             📦
           </div>
 
-
           <h2>
             Loading Orders...
           </h2>
-
 
           <p>
             Please wait while we fetch
@@ -303,13 +260,11 @@ function MyOrders() {
 
         </section>
 
-
       </main>
 
     );
 
   }
-
 
   // =========================================
   // ERROR
@@ -321,18 +276,15 @@ function MyOrders() {
 
       <main className="my-orders-page">
 
-
         <section className="orders-header">
 
           <p className="section-small-title">
             YOUR GLOWRY
           </p>
 
-
           <h1>
             My Orders
           </h1>
-
 
           <p>
             Track and manage your Glowry
@@ -341,23 +293,19 @@ function MyOrders() {
 
         </section>
 
-
         <section className="empty-orders">
 
           <div className="empty-orders-icon">
             ⚠
           </div>
 
-
           <h2>
             Something Went Wrong
           </h2>
 
-
           <p>
             {error}
           </p>
-
 
           <button
             type="button"
@@ -369,16 +317,13 @@ function MyOrders() {
             Try Again
           </button>
 
-
         </section>
-
 
       </main>
 
     );
 
   }
-
 
   // =========================================
   // EMPTY ORDERS
@@ -390,18 +335,15 @@ function MyOrders() {
 
       <main className="my-orders-page">
 
-
         <section className="orders-header">
 
           <p className="section-small-title">
             YOUR GLOWRY
           </p>
 
-
           <h1>
             My Orders
           </h1>
-
 
           <p>
             Track and manage your Glowry
@@ -410,25 +352,21 @@ function MyOrders() {
 
         </section>
 
-
         <section className="empty-orders">
 
           <div className="empty-orders-icon">
             📦
           </div>
 
-
           <h2>
             No Orders Yet
           </h2>
-
 
           <p>
             You haven't placed any orders yet.
             Start shopping for your skincare
             essentials.
           </p>
-
 
           <Link
             to="/products"
@@ -437,16 +375,13 @@ function MyOrders() {
             Explore Products
           </Link>
 
-
         </section>
-
 
       </main>
 
     );
 
   }
-
 
   // =========================================
   // ORDERS PAGE
@@ -455,7 +390,6 @@ function MyOrders() {
   return (
 
     <main className="my-orders-page">
-
 
       {/* =====================================
           HEADER
@@ -467,11 +401,9 @@ function MyOrders() {
           YOUR GLOWRY
         </p>
 
-
         <h1>
           My Orders
         </h1>
-
 
         <p>
           Track and manage your Glowry
@@ -479,7 +411,6 @@ function MyOrders() {
         </p>
 
       </section>
-
 
       {/* =====================================
           ORDERS LIST
@@ -497,13 +428,11 @@ function MyOrders() {
             }
           >
 
-
             {/* =================================
                 ORDER HEADER
             ================================= */}
 
             <div className="order-card-header">
-
 
               <div>
 
@@ -511,13 +440,11 @@ function MyOrders() {
                   ORDER ID
                 </p>
 
-
                 <h2>
                   {order.orderId}
                 </h2>
 
               </div>
-
 
               <div className="order-status">
 
@@ -528,9 +455,7 @@ function MyOrders() {
 
               </div>
 
-
             </div>
-
 
             {/* =================================
                 ORDER INFO
@@ -538,13 +463,11 @@ function MyOrders() {
 
             <div className="order-info">
 
-
               <div>
 
                 <span>
                   Order Date
                 </span>
-
 
                 <strong>
 
@@ -567,13 +490,11 @@ function MyOrders() {
 
               </div>
 
-
               <div>
 
                 <span>
                   Payment
                 </span>
-
 
                 <strong>
 
@@ -588,40 +509,32 @@ function MyOrders() {
 
               </div>
 
-
               <div>
 
                 <span>
                   Items
                 </span>
 
-
                 <strong>
 
                   {(order.items || []).reduce(
-
                     (total, item) =>
-
                       total +
                       Number(
                         item.quantity || 0
                       ),
-
                     0
-
                   )}
 
                 </strong>
 
               </div>
 
-
               <div>
 
                 <span>
                   Total
                 </span>
-
 
                 <strong>
 
@@ -636,9 +549,7 @@ function MyOrders() {
 
               </div>
 
-
             </div>
-
 
             {/* =================================
                 PRODUCTS
@@ -657,7 +568,6 @@ function MyOrders() {
                       index
                     }
                   >
-
 
                     <div className="order-product-image">
 
@@ -679,14 +589,11 @@ function MyOrders() {
 
                       )}
 
-
                       <span>
                         {item.quantity}
                       </span>
 
-
                     </div>
-
 
                     <div className="order-product-details">
 
@@ -694,7 +601,6 @@ function MyOrders() {
                         {item.name ||
                           "Product"}
                       </h3>
-
 
                       <p>
 
@@ -707,9 +613,7 @@ function MyOrders() {
 
                       </p>
 
-
                     </div>
-
 
                     <strong className="order-product-total">
 
@@ -727,7 +631,6 @@ function MyOrders() {
 
                     </strong>
 
-
                   </div>
 
                 )
@@ -735,13 +638,11 @@ function MyOrders() {
 
             </div>
 
-
             {/* =================================
                 DELIVERY
             ================================= */}
 
             <div className="order-delivery">
-
 
               <div>
 
@@ -749,13 +650,11 @@ function MyOrders() {
                   Estimated Delivery
                 </span>
 
-
                 <strong>
                   3 - 5 Business Days
                 </strong>
 
               </div>
-
 
               <span className="delivery-status">
 
@@ -765,9 +664,7 @@ function MyOrders() {
 
               </span>
 
-
             </div>
-
 
             {/* =================================
                 TRACK ORDER
@@ -784,13 +681,11 @@ function MyOrders() {
 
             </div>
 
-
           </article>
 
         ))}
 
       </section>
-
 
       {/* =====================================
           CONTINUE SHOPPING
@@ -807,12 +702,10 @@ function MyOrders() {
 
       </div>
 
-
     </main>
 
   );
 
 }
-
 
 export default MyOrders;

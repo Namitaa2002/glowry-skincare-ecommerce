@@ -3,6 +3,8 @@ import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
 
+import { API_BASE_URL } from "../config/api";
+
 import {
   LayoutDashboard,
   ShoppingBag,
@@ -18,6 +20,61 @@ import {
 } from "lucide-react";
 
 
+// =========================================
+// GET ADMIN DATA
+// =========================================
+
+const getInitialAdmin = () => {
+
+  const adminToken =
+    localStorage.getItem("glowryAdminToken");
+
+  const adminUser =
+    localStorage.getItem("glowryAdminUser");
+
+  if (!adminToken || !adminUser) {
+    return null;
+  }
+
+  try {
+
+    const parsedAdmin =
+      JSON.parse(adminUser);
+
+    if (parsedAdmin.role !== "admin") {
+
+      localStorage.removeItem(
+        "glowryAdminToken"
+      );
+
+      localStorage.removeItem(
+        "glowryAdminUser"
+      );
+
+      return null;
+    }
+
+    return parsedAdmin;
+
+  } catch {
+
+    localStorage.removeItem(
+      "glowryAdminToken"
+    );
+
+    localStorage.removeItem(
+      "glowryAdminUser"
+    );
+
+    return null;
+  }
+};
+
+
+// =========================================
+// ADMIN DASHBOARD
+// =========================================
+
 function AdminDashboard() {
 
   const navigate = useNavigate();
@@ -26,7 +83,8 @@ function AdminDashboard() {
   // ADMIN DATA
   // =========================================
 
-  const [admin, setAdmin] = useState(null);
+  const [admin] =
+    useState(getInitialAdmin);
 
   const [stats, setStats] = useState({
     totalUsers: 0,
@@ -35,11 +93,16 @@ function AdminDashboard() {
     totalRevenue: 0,
   });
 
-  const [recentOrders, setRecentOrders] = useState([]);
+  const [recentOrders, setRecentOrders] =
+    useState([]);
 
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] =
+    useState(true);
 
-const [showLogoutModal, setShowLogoutModal] = useState(false);
+  const [showLogoutModal, setShowLogoutModal] =
+    useState(false);
+
+
   // =========================================
   // ADMIN AUTH CHECK
   // =========================================
@@ -47,45 +110,23 @@ const [showLogoutModal, setShowLogoutModal] = useState(false);
   useEffect(() => {
 
     const adminToken =
-      localStorage.getItem("glowryAdminToken");
+      localStorage.getItem(
+        "glowryAdminToken"
+      );
 
     const adminUser =
-      localStorage.getItem("glowryAdminUser");
+      localStorage.getItem(
+        "glowryAdminUser"
+      );
 
-
-    if (!adminToken || !adminUser) {
+    if (!adminToken || !adminUser || !admin) {
 
       navigate("/admin/login");
 
       return;
-
     }
 
-
-    try {
-
-      const parsedAdmin =
-        JSON.parse(adminUser);
-
-      if (parsedAdmin.role !== "admin") {
-
-        localStorage.removeItem(
-          "glowryAdminToken"
-        );
-
-        localStorage.removeItem(
-          "glowryAdminUser"
-        );
-
-        navigate("/admin/login");
-
-        return;
-
-      }
-
-      setAdmin(parsedAdmin);
-
-    } catch (error) {
+    if (admin.role !== "admin") {
 
       localStorage.removeItem(
         "glowryAdminToken"
@@ -96,10 +137,9 @@ const [showLogoutModal, setShowLogoutModal] = useState(false);
       );
 
       navigate("/admin/login");
-
     }
 
-  }, [navigate]);
+  }, [admin, navigate]);
 
 
   // =========================================
@@ -117,15 +157,13 @@ const [showLogoutModal, setShowLogoutModal] = useState(false);
             "glowryAdminToken"
           );
 
-
         if (!token) {
           return;
         }
 
-
         const response =
           await axios.get(
-            "http://localhost:5000/api/admin/dashboard",
+            `${API_BASE_URL}/admin/dashboard`,
             {
               headers: {
                 Authorization:
@@ -134,10 +172,8 @@ const [showLogoutModal, setShowLogoutModal] = useState(false);
             }
           );
 
-
         const data =
           response.data;
-
 
         setStats({
 
@@ -155,11 +191,9 @@ const [showLogoutModal, setShowLogoutModal] = useState(false);
 
         });
 
-
         setRecentOrders(
           data.recentOrders || []
         );
-
 
       } catch (error) {
 
@@ -176,7 +210,6 @@ const [showLogoutModal, setShowLogoutModal] = useState(false);
 
     };
 
-
     fetchDashboardData();
 
   }, []);
@@ -186,21 +219,21 @@ const [showLogoutModal, setShowLogoutModal] = useState(false);
   // LOGOUT
   // =========================================
 
-const handleLogout = () => {
+  const handleLogout = () => {
 
-  localStorage.removeItem(
-    "glowryAdminToken"
-  );
+    localStorage.removeItem(
+      "glowryAdminToken"
+    );
 
-  localStorage.removeItem(
-    "glowryAdminUser"
-  );
+    localStorage.removeItem(
+      "glowryAdminUser"
+    );
 
-  setShowLogoutModal(false);
+    setShowLogoutModal(false);
 
-  navigate("/admin/login");
+    navigate("/admin/login");
 
-};
+  };
 
 
   // =========================================
@@ -423,16 +456,19 @@ const handleLogout = () => {
 
           </div>
 
-           <button
-             className="admin-logout-button"
-             onClick={() => setShowLogoutModal(true)}
-           >
+
+          <button
+            className="admin-logout-button"
+            onClick={() =>
+              setShowLogoutModal(true)
+            }
+          >
 
             <LogOut size={17} />
 
             Logout
 
-            </button>
+          </button>
 
         </div>
 
@@ -907,76 +943,77 @@ const handleLogout = () => {
 
         </section>
 
-{/* =====================================
-    LOGOUT CONFIRMATION MODAL
-===================================== */}
 
-{showLogoutModal && (
+        {/* =====================================
+            LOGOUT CONFIRMATION MODAL
+        ===================================== */}
 
-  <div
-    className="admin-logout-overlay"
-    onClick={() =>
-      setShowLogoutModal(false)
-    }
-  >
+        {showLogoutModal && (
 
-    <div
-      className="admin-logout-modal"
-      onClick={(e) =>
-        e.stopPropagation()
-      }
-    >
+          <div
+            className="admin-logout-overlay"
+            onClick={() =>
+              setShowLogoutModal(false)
+            }
+          >
 
-      <div className="admin-logout-icon">
+            <div
+              className="admin-logout-modal"
+              onClick={(e) =>
+                e.stopPropagation()
+              }
+            >
 
-        <LogOut size={24} />
+              <div className="admin-logout-icon">
 
-      </div>
+                <LogOut size={24} />
 
-
-      <h2>
-        Are you sure?
-      </h2>
+              </div>
 
 
-      <p>
-        Do you really want to logout
-        from the GLOWRY Admin Panel?
-      </p>
+              <h2>
+                Are you sure?
+              </h2>
 
 
-      <div className="admin-logout-actions">
-
-        <button
-          type="button"
-          className="admin-cancel-logout"
-          onClick={() =>
-            setShowLogoutModal(false)
-          }
-        >
-          Cancel
-        </button>
+              <p>
+                Do you really want to logout
+                from the GLOWRY Admin Panel?
+              </p>
 
 
-        <button
-          type="button"
-          className="admin-confirm-logout"
-          onClick={handleLogout}
-        >
+              <div className="admin-logout-actions">
 
-          <LogOut size={16} />
+                <button
+                  type="button"
+                  className="admin-cancel-logout"
+                  onClick={() =>
+                    setShowLogoutModal(false)
+                  }
+                >
+                  Cancel
+                </button>
 
-          Yes, Logout
 
-        </button>
+                <button
+                  type="button"
+                  className="admin-confirm-logout"
+                  onClick={handleLogout}
+                >
 
-      </div>
+                  <LogOut size={16} />
 
-    </div>
+                  Yes, Logout
 
-  </div>
+                </button>
 
-)}
+              </div>
+
+            </div>
+
+          </div>
+
+        )}
 
 
       </section>

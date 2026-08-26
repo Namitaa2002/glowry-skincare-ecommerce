@@ -2,6 +2,10 @@ import { useEffect, useState } from "react";
 import axios from "axios";
 import { Link } from "react-router-dom";
 
+import {
+  API_BASE_URL,
+  SERVER_BASE_URL,
+} from "../config/api";
 
 // =========================================
 // SKIN MATCH
@@ -104,7 +108,6 @@ function SkinMatch() {
 
   ];
 
-
   // =========================================
   // STATES
   // =========================================
@@ -117,7 +120,6 @@ function SkinMatch() {
 
   const [loading, setLoading] =
     useState(false);
-
 
   // =========================================
   // FETCH PRODUCTS
@@ -133,7 +135,7 @@ function SkinMatch() {
 
         const response =
           await axios.get(
-            "http://localhost:5000/api/products"
+            `${API_BASE_URL}/products`
           );
 
         const productData =
@@ -160,11 +162,9 @@ function SkinMatch() {
 
     };
 
-
     fetchProducts();
 
   }, []);
-
 
   // =========================================
   // IMAGE URL
@@ -184,13 +184,12 @@ function SkinMatch() {
     }
 
     if (image.startsWith("/")) {
-      return `http://localhost:5000${image}`;
+      return `${SERVER_BASE_URL}${image}`;
     }
 
-    return `http://localhost:5000/images/${image}`;
+    return `${SERVER_BASE_URL}/images/${image}`;
 
   };
-
 
   // =========================================
   // FIND RECOMMENDED PRODUCTS
@@ -202,18 +201,15 @@ function SkinMatch() {
       return [];
     }
 
-
     const concern =
       concerns.find(
         (item) =>
           item.id === selectedConcern
       );
 
-
     if (!concern) {
       return [];
     }
-
 
     const matchedProducts =
       products.filter((product) => {
@@ -232,7 +228,6 @@ function SkinMatch() {
           .join(" ")
           .toLowerCase();
 
-
         return concern.keywords.some(
           (keyword) =>
             productText.includes(
@@ -241,7 +236,6 @@ function SkinMatch() {
         );
 
       });
-
 
     // =====================================
     // IF MATCHES ARE LESS THAN 3
@@ -256,22 +250,18 @@ function SkinMatch() {
 
     }
 
-
     return matchedProducts.slice(0, 3);
 
   };
 
-
   const recommendedProducts =
     getRecommendedProducts();
-
 
   const selectedConcernData =
     concerns.find(
       (item) =>
         item.id === selectedConcern
     );
-
 
   // =========================================
   // PAGE
@@ -280,7 +270,6 @@ function SkinMatch() {
   return (
 
     <div className="skin-match-component">
-
 
       {/* =====================================
           CONCERN OPTIONS
@@ -309,7 +298,6 @@ function SkinMatch() {
               {concern.icon}
             </span>
 
-
             <span className="skin-concern-content">
 
               <strong>
@@ -322,7 +310,6 @@ function SkinMatch() {
 
             </span>
 
-
             <span className="skin-concern-arrow">
               →
             </span>
@@ -333,8 +320,6 @@ function SkinMatch() {
 
       </div>
 
-
-
       {/* =====================================
           RECOMMENDATION AREA
       ===================================== */}
@@ -342,7 +327,6 @@ function SkinMatch() {
       {selectedConcern && (
 
         <div className="skin-recommendation-area">
-
 
           {/* ===================================
               RESULT HEADER
@@ -356,14 +340,12 @@ function SkinMatch() {
                 YOUR GLOWRY MATCH
               </span>
 
-
               <h4>
 
                 {selectedConcernData?.title}
                 {" "}Care
 
               </h4>
-
 
               <p>
 
@@ -374,7 +356,6 @@ function SkinMatch() {
               </p>
 
             </div>
-
 
             <div className="recommendation-badge">
 
@@ -389,8 +370,6 @@ function SkinMatch() {
             </div>
 
           </div>
-
-
 
           {/* ===================================
               PRODUCTS
@@ -434,18 +413,15 @@ function SkinMatch() {
 
                       </div>
 
-
                       <div className="skin-recommended-info">
 
                         <span>
                           {product.category}
                         </span>
 
-
                         <h5>
                           {product.name}
                         </h5>
-
 
                         <div className="skin-product-bottom">
 
@@ -457,7 +433,6 @@ function SkinMatch() {
                               "en-IN"
                             )}
                           </strong>
-
 
                           <div className="skin-product-rating">
 
@@ -481,8 +456,6 @@ function SkinMatch() {
 
               </div>
 
-
-
               {/* =================================
                   SHOP BUTTON
               ================================= */}
@@ -501,7 +474,6 @@ function SkinMatch() {
                   </span>
 
                 </Link>
-
 
                 <button
                   type="button"
@@ -544,8 +516,6 @@ function SkinMatch() {
 
       )}
 
-
-
       {/* =====================================
           INITIAL MESSAGE
       ===================================== */}
@@ -572,6 +542,5 @@ function SkinMatch() {
   );
 
 }
-
 
 export default SkinMatch;

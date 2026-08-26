@@ -29,22 +29,35 @@ router.post("/register", async (req, res) => {
     if (!name || !email || !password) {
 
       return res.status(400).json({
-        message: "Please fill all required fields.",
+
+        message:
+          "Please fill all required fields.",
+
       });
 
     }
 
 
+    const normalizedEmail =
+      email.toLowerCase().trim();
+
+
     const existingUser =
       await User.findOne({
-        email: email.toLowerCase(),
+
+        email:
+          normalizedEmail,
+
       });
 
 
     if (existingUser) {
 
       return res.status(409).json({
-        message: "User already exists.",
+
+        message:
+          "User already exists.",
+
       });
 
     }
@@ -60,10 +73,11 @@ router.post("/register", async (req, res) => {
     const user =
       await User.create({
 
-        name,
+        name:
+          name.trim(),
 
         email:
-          email.toLowerCase(),
+          normalizedEmail,
 
         password:
           hashedPassword,
@@ -82,7 +96,8 @@ router.post("/register", async (req, res) => {
 
       await sendEmail({
 
-        to: user.email,
+        to:
+          user.email,
 
         subject:
           "Welcome to GLOWRY ✨",
@@ -176,6 +191,7 @@ router.post("/register", async (req, res) => {
       error
     );
 
+
     res.status(500).json({
 
       message:
@@ -218,6 +234,10 @@ router.post("/login", async (req, res) => {
     }
 
 
+    const normalizedEmail =
+      email.toLowerCase().trim();
+
+
     // =======================================
     // FIND USER
     // =======================================
@@ -226,7 +246,7 @@ router.post("/login", async (req, res) => {
       await User.findOne({
 
         email:
-          email.toLowerCase(),
+          normalizedEmail,
 
       });
 
@@ -277,6 +297,7 @@ router.post("/login", async (req, res) => {
       jwt.sign(
 
         {
+
           id:
             user._id.toString(),
 
@@ -288,7 +309,10 @@ router.post("/login", async (req, res) => {
         process.env.JWT_SECRET,
 
         {
-          expiresIn: "7d",
+
+          expiresIn:
+            "7d",
+
         }
 
       );
@@ -340,6 +364,7 @@ router.post("/login", async (req, res) => {
       error
     );
 
+
     res.status(500).json({
 
       message:
@@ -352,15 +377,37 @@ router.post("/login", async (req, res) => {
 });
 
 
-// =========================================
+// =====================================================
 // GET USER PROFILE
-// =========================================
+// GET /api/auth/profile/:id
+// AUTHENTICATED USER ONLY
+// =====================================================
 
 router.get(
   "/profile/:id",
+  protect,
   async (req, res) => {
 
     try {
+
+      // =====================================
+      // CHECK PROFILE OWNER
+      // =====================================
+
+      if (
+        String(req.user.id) !==
+        String(req.params.id)
+      ) {
+
+        return res.status(403).json({
+
+          message:
+            "You can only access your own profile.",
+
+        });
+
+      }
+
 
       const user =
         await User.findById(
@@ -411,6 +458,7 @@ router.get(
 
       });
 
+
     } catch (error) {
 
       console.error(
@@ -432,15 +480,37 @@ router.get(
 );
 
 
-// =========================================
+// =====================================================
 // UPDATE USER PROFILE
-// =========================================
+// PUT /api/auth/profile/:id
+// AUTHENTICATED USER ONLY
+// =====================================================
 
 router.put(
   "/profile/:id",
+  protect,
   async (req, res) => {
 
     try {
+
+      // =====================================
+      // CHECK PROFILE OWNER
+      // =====================================
+
+      if (
+        String(req.user.id) !==
+        String(req.params.id)
+      ) {
+
+        return res.status(403).json({
+
+          message:
+            "You can only update your own profile.",
+
+        });
+
+      }
+
 
       const {
         fullName,
@@ -488,12 +558,16 @@ router.put(
 
 
       // =====================================
-      // CHECK EMAIL
+      // NORMALIZE EMAIL
       // =====================================
 
       const normalizedEmail =
         email.toLowerCase().trim();
 
+
+      // =====================================
+      // CHECK DUPLICATE EMAIL
+      // =====================================
 
       const existingUser =
         await User.findOne({
@@ -574,6 +648,7 @@ router.put(
 
       });
 
+
     } catch (error) {
 
       console.error(
@@ -597,13 +672,35 @@ router.put(
 
 // =====================================================
 // GET ACCOUNT SETTINGS
+// GET /api/auth/settings/:id
+// AUTHENTICATED USER ONLY
 // =====================================================
 
 router.get(
   "/settings/:id",
+  protect,
   async (req, res) => {
 
     try {
+
+      // =====================================
+      // CHECK SETTINGS OWNER
+      // =====================================
+
+      if (
+        String(req.user.id) !==
+        String(req.params.id)
+      ) {
+
+        return res.status(403).json({
+
+          message:
+            "You can only access your own settings.",
+
+        });
+
+      }
+
 
       const user =
         await User.findById(
@@ -657,6 +754,7 @@ router.get(
 
       });
 
+
     } catch (error) {
 
       console.error(
@@ -680,13 +778,35 @@ router.get(
 
 // =====================================================
 // UPDATE ACCOUNT SETTINGS
+// PUT /api/auth/settings/:id
+// AUTHENTICATED USER ONLY
 // =====================================================
 
 router.put(
   "/settings/:id",
+  protect,
   async (req, res) => {
 
     try {
+
+      // =====================================
+      // CHECK SETTINGS OWNER
+      // =====================================
+
+      if (
+        String(req.user.id) !==
+        String(req.params.id)
+      ) {
+
+        return res.status(403).json({
+
+          message:
+            "You can only update your own settings.",
+
+        });
+
+      }
+
 
       const {
         emailNotification,
@@ -764,6 +884,7 @@ router.put(
 
       });
 
+
     } catch (error) {
 
       console.error(
@@ -775,7 +896,7 @@ router.put(
       res.status(500).json({
 
         message:
-          "Failed to update settings.",
+          "Failed to update account settings.",
 
       });
 
@@ -787,13 +908,35 @@ router.put(
 
 // =====================================================
 // CHANGE PASSWORD
+// PUT /api/auth/change-password/:id
+// AUTHENTICATED USER ONLY
 // =====================================================
 
 router.put(
   "/change-password/:id",
+  protect,
   async (req, res) => {
 
     try {
+
+      // =====================================
+      // CHECK PASSWORD OWNER
+      // =====================================
+
+      if (
+        String(req.user.id) !==
+        String(req.params.id)
+      ) {
+
+        return res.status(403).json({
+
+          message:
+            "You can only change your own password.",
+
+        });
+
+      }
+
 
       const {
         currentPassword,
@@ -914,6 +1057,7 @@ router.put(
 
       });
 
+
     } catch (error) {
 
       console.error(
@@ -937,6 +1081,8 @@ router.put(
 
 // =====================================================
 // FORGOT PASSWORD
+// POST /api/auth/forgot-password
+// PUBLIC
 // =====================================================
 
 router.post(
@@ -962,16 +1108,22 @@ router.post(
       }
 
 
+      const normalizedEmail =
+        email.toLowerCase().trim();
+
+
       const user =
         await User.findOne({
 
           email:
-            email.toLowerCase().trim(),
+            normalizedEmail,
 
         });
 
 
-      // Don't reveal whether email exists
+      // =====================================
+      // DON'T REVEAL WHETHER EMAIL EXISTS
+      // =====================================
 
       if (!user) {
 
@@ -1118,6 +1270,7 @@ router.post(
 
       });
 
+
     } catch (error) {
 
       console.error(
@@ -1141,6 +1294,8 @@ router.post(
 
 // =====================================================
 // RESET PASSWORD
+// PUT /api/auth/reset-password/:token
+// PUBLIC
 // =====================================================
 
 router.put(
@@ -1238,6 +1393,10 @@ router.put(
         hashedPassword;
 
 
+      // =====================================
+      // CLEAR RESET TOKEN
+      // =====================================
+
       user.resetPasswordToken =
         undefined;
 
@@ -1255,6 +1414,7 @@ router.put(
           "Password reset successfully.",
 
       });
+
 
     } catch (error) {
 

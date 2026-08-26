@@ -1,3 +1,4 @@
+
 import { Link, useNavigate } from "react-router-dom";
 import { useEffect, useState } from "react";
 
@@ -18,7 +19,6 @@ function UserDashboard() {
     cartCount,
   } = useCart();
 
-  
 
   // =========================================
   // WISHLIST
@@ -30,18 +30,78 @@ function UserDashboard() {
 
 
   // =========================================
-  // STATES
+  // LOAD USER FROM LOCAL STORAGE
   // =========================================
 
-  const [user, setUser] =
-    useState(null);
+  const [user] = useState(() => {
 
-  const [orders, setOrders] =
-    useState([]);
+    try {
+
+      const savedUser =
+        localStorage.getItem(
+          "glowryLoggedInUser"
+        );
+
+      if (!savedUser) {
+        return null;
+      }
+
+      return JSON.parse(savedUser);
+
+    } catch (error) {
+
+      console.error(
+        "Error loading user:",
+        error
+      );
+
+      return null;
+
+    }
+
+  });
 
 
   // =========================================
-  // LOAD USER + ORDERS
+  // LOAD ORDERS FROM LOCAL STORAGE
+  // =========================================
+
+  const [orders] = useState(() => {
+
+    try {
+
+      const savedOrders =
+        localStorage.getItem(
+          "glowryOrders"
+        );
+
+      if (!savedOrders) {
+        return [];
+      }
+
+      const parsedOrders =
+        JSON.parse(savedOrders);
+
+      return Array.isArray(parsedOrders)
+        ? parsedOrders
+        : [];
+
+    } catch (error) {
+
+      console.error(
+        "Error loading orders:",
+        error
+      );
+
+      return [];
+
+    }
+
+  });
+
+
+  // =========================================
+  // CHECK LOGIN
   // =========================================
 
   useEffect(() => {
@@ -51,10 +111,6 @@ function UserDashboard() {
         "glowryLoggedInUser"
       );
 
-
-    // ---------------------------------------
-    // USER NOT LOGGED IN
-    // ---------------------------------------
 
     if (!savedUser) {
 
@@ -70,12 +126,21 @@ function UserDashboard() {
       const loggedInUser =
         JSON.parse(savedUser);
 
-      setUser(loggedInUser);
+
+      if (!loggedInUser?.id) {
+
+        localStorage.removeItem(
+          "glowryLoggedInUser"
+        );
+
+        navigate("/login");
+
+      }
 
     } catch (error) {
 
       console.error(
-        "Error loading user:",
+        "Error validating user:",
         error
       );
 
@@ -84,40 +149,6 @@ function UserDashboard() {
       );
 
       navigate("/login");
-
-      return;
-
-    }
-
-
-    // ---------------------------------------
-    // LOAD ORDERS
-    // ---------------------------------------
-
-    try {
-
-      const savedOrders =
-        JSON.parse(
-          localStorage.getItem(
-            "glowryOrders"
-          )
-        ) || [];
-
-
-      setOrders(
-        Array.isArray(savedOrders)
-          ? savedOrders
-          : []
-      );
-
-    } catch (error) {
-
-      console.error(
-        "Error loading orders:",
-        error
-      );
-
-      setOrders([]);
 
     }
 
@@ -132,6 +163,10 @@ function UserDashboard() {
 
     localStorage.removeItem(
       "glowryLoggedInUser"
+    );
+
+    localStorage.removeItem(
+      "glowryToken"
     );
 
     navigate("/login");
@@ -170,6 +205,10 @@ function UserDashboard() {
   }
 
 
+  // =========================================
+  // PAGE
+  // =========================================
+
   return (
 
     <main className="dashboard-page">
@@ -189,7 +228,7 @@ function UserDashboard() {
 
 
           <h1>
-            Welcome, {user.fullName}
+            Welcome, {user.fullName || user.name || "User"}
           </h1>
 
 
@@ -218,7 +257,6 @@ function UserDashboard() {
       </section>
 
 
-
       {/* =====================================
           QUICK STATS
       ===================================== */}
@@ -226,9 +264,7 @@ function UserDashboard() {
       <section className="dashboard-stats">
 
 
-        {/* ===================================
-            ORDERS
-        =================================== */}
+        {/* ORDERS */}
 
         <Link
           to="/dashboard/orders"
@@ -259,10 +295,7 @@ function UserDashboard() {
         </Link>
 
 
-
-        {/* ===================================
-            WISHLIST
-        =================================== */}
+        {/* WISHLIST */}
 
         <Link
           to="/wishlist"
@@ -293,10 +326,7 @@ function UserDashboard() {
         </Link>
 
 
-
-        {/* ===================================
-            CART
-        =================================== */}
+        {/* CART */}
 
         <Link
           to="/cart"
@@ -330,7 +360,6 @@ function UserDashboard() {
       </section>
 
 
-
       {/* =====================================
           DASHBOARD CONTENT
       ===================================== */}
@@ -338,12 +367,9 @@ function UserDashboard() {
       <section className="dashboard-content">
 
 
-        {/* ===================================
-            ACCOUNT MENU
-        =================================== */}
+        {/* ACCOUNT MENU */}
 
         <div className="dashboard-card">
-
 
           <div className="dashboard-card-header">
 
@@ -353,7 +379,6 @@ function UserDashboard() {
                 ACCOUNT
               </p>
 
-
               <h2>
                 Manage Your Account
               </h2>
@@ -361,7 +386,6 @@ function UserDashboard() {
             </div>
 
           </div>
-
 
 
           <div className="dashboard-menu">
@@ -401,7 +425,6 @@ function UserDashboard() {
             </Link>
 
 
-
             {/* ORDERS */}
 
             <Link
@@ -435,7 +458,6 @@ function UserDashboard() {
             </Link>
 
 
-
             {/* WISHLIST */}
 
             <Link
@@ -457,9 +479,7 @@ function UserDashboard() {
 
                 <span>
                   {wishlist.length} saved product
-                  {wishlist.length !== 1
-                    ? "s"
-                    : ""}
+                  {wishlist.length !== 1 ? "s" : ""}
                 </span>
 
               </div>
@@ -470,7 +490,6 @@ function UserDashboard() {
               </span>
 
             </Link>
-
 
 
             {/* ADDRESSES */}
@@ -504,7 +523,6 @@ function UserDashboard() {
               </span>
 
             </Link>
-
 
 
             {/* SETTINGS */}
@@ -545,13 +563,9 @@ function UserDashboard() {
         </div>
 
 
-
-        {/* ===================================
-            RECENT ORDERS
-        =================================== */}
+        {/* RECENT ORDERS */}
 
         <div className="dashboard-card">
-
 
           <div className="dashboard-card-header">
 
@@ -575,20 +589,13 @@ function UserDashboard() {
                 to="/dashboard/orders"
                 className="dashboard-view-all"
               >
-
                 View All
-
               </Link>
 
             )}
 
           </div>
 
-
-
-          {/* =================================
-              NO ORDERS
-          ================================= */}
 
           {orders.length === 0 ? (
 
@@ -614,19 +621,12 @@ function UserDashboard() {
                 to="/products"
                 className="dashboard-shop-button"
               >
-
                 Start Shopping
-
               </Link>
 
             </div>
 
           ) : (
-
-
-            /* =================================
-               ORDERS
-            ================================= */
 
             <div className="dashboard-orders">
 
@@ -636,19 +636,25 @@ function UserDashboard() {
 
                   <div
                     className="dashboard-order"
-                    key={order.orderId}
+                    key={
+                      order.orderId ||
+                      order._id
+                    }
                   >
-
 
                     <div>
 
                       <strong>
-                        {order.orderId}
+                        {order.orderId ||
+                          order._id ||
+                          "Order"}
                       </strong>
 
 
                       <span>
-                        {order.date}
+                        {order.date ||
+                          order.createdAt ||
+                          "Recent order"}
                       </span>
 
                     </div>
@@ -657,7 +663,10 @@ function UserDashboard() {
                     <div>
 
                       <strong>
-                        ₹{Number(order.total || 0)}
+                        ₹
+                        {Number(
+                          order.total || 0
+                        ).toLocaleString("en-IN")}
                       </strong>
 
 
@@ -666,7 +675,6 @@ function UserDashboard() {
                       </span>
 
                     </div>
-
 
                   </div>
 
@@ -682,10 +690,7 @@ function UserDashboard() {
       </section>
 
 
-
-      {/* =====================================
-          ACCOUNT OVERVIEW
-      ===================================== */}
+      {/* ACCOUNT OVERVIEW */}
 
       <section
         className="dashboard-card"
@@ -703,6 +708,7 @@ function UserDashboard() {
               OVERVIEW
             </p>
 
+
             <h2>
               Your Glowry Activity
             </h2>
@@ -714,6 +720,8 @@ function UserDashboard() {
 
         <div className="dashboard-stats">
 
+
+          {/* TOTAL SPENT */}
 
           <div className="dashboard-stat">
 
@@ -728,14 +736,18 @@ function UserDashboard() {
                 Total Spent
               </span>
 
+
               <strong>
-                ₹{totalSpent}
+                ₹
+                {totalSpent.toLocaleString("en-IN")}
               </strong>
 
             </div>
 
           </div>
 
+
+          {/* SAVED PRODUCTS */}
 
           <div className="dashboard-stat">
 
@@ -750,6 +762,7 @@ function UserDashboard() {
                 Saved Products
               </span>
 
+
               <strong>
                 {wishlist.length}
               </strong>
@@ -758,6 +771,8 @@ function UserDashboard() {
 
           </div>
 
+
+          {/* CART ITEMS */}
 
           <div className="dashboard-stat">
 
@@ -769,8 +784,9 @@ function UserDashboard() {
             <div>
 
               <span>
-                Cart Value
+                Cart Items
               </span>
+
 
               <strong>
                 {cartCount}
@@ -794,3 +810,4 @@ function UserDashboard() {
 
 
 export default UserDashboard;
+

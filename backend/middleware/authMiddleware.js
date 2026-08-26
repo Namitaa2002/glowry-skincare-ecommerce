@@ -58,11 +58,8 @@ export const protect = async (req, res, next) => {
 
     const decoded =
       jwt.verify(
-
         token,
-
         process.env.JWT_SECRET
-
       );
 
 
@@ -124,6 +121,36 @@ export const adminOnly = (
 
   }
 
+
+  next();
+
+};
+
+
+// =========================================
+// USER OWNERSHIP CHECK
+// =========================================
+
+export const authorizeUser = (
+  req,
+  res,
+  next
+) => {
+
+  if (
+    !req.user ||
+    String(req.user.id) !==
+      String(req.params.userId)
+  ) {
+
+    return res.status(403).json({
+
+      message:
+        "You are not authorized to access this resource.",
+
+    });
+
+  }
 
   next();
 

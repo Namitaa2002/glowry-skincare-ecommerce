@@ -1,12 +1,27 @@
-import { Link, useNavigate, useParams } from "react-router-dom";
-import { useState } from "react";
+
+import {
+  Link,
+  useNavigate,
+  useParams,
+} from "react-router-dom";
+
+import {
+  useState,
+} from "react";
+
 import axios from "axios";
+
+import {
+  API_BASE_URL,
+} from "../config/api";
+
 
 function ResetPassword() {
 
   const { token } = useParams();
 
-  const navigate = useNavigate();
+  const navigate =
+    useNavigate();
 
 
   // =========================================
@@ -124,7 +139,7 @@ function ResetPassword() {
         const response =
           await axios.post(
 
-            `http://localhost:5000/api/auth/reset-password/${token}`,
+            `${API_BASE_URL}/auth/reset-password/${token}`,
 
             {
 
@@ -453,4 +468,6 @@ function ResetPassword() {
 
 }
 
+
 export default ResetPassword;
+

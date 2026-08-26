@@ -1,6 +1,9 @@
+
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
+
+import { API_BASE_URL } from "../config/api";
 
 function AdminLogin() {
   const navigate = useNavigate();
@@ -11,6 +14,10 @@ function AdminLogin() {
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
 
+  // =========================================
+  // ADMIN LOGIN
+  // =========================================
+
   const handleLogin = async (e) => {
     e.preventDefault();
 
@@ -18,23 +25,57 @@ function AdminLogin() {
       setLoading(true);
       setError("");
 
+      // =======================================
+      // LOGIN API
+      // =======================================
+
       const response = await axios.post(
-        "http://localhost:5000/api/auth/login",
+        `${API_BASE_URL}/auth/login`,
         {
-          email,
+          email: email.trim(),
           password,
         }
       );
 
       const { token, user } = response.data;
 
-      // Only admin can access this login
-      if (user.role !== "admin") {
-        setError("Admin access required.");
+      // =======================================
+      // CHECK RESPONSE
+      // =======================================
+
+      if (!token || !user) {
+        setError("Invalid login response.");
         return;
       }
 
-      // Separate admin storage
+      // =======================================
+      // ADMIN ROLE CHECK
+      // =======================================
+
+      if (user.role !== "admin") {
+        setError(
+          "Admin access required. This account does not have admin privileges."
+        );
+
+        return;
+      }
+
+      // =======================================
+      // CLEAR OLD ADMIN SESSION
+      // =======================================
+
+      localStorage.removeItem(
+        "glowryAdminToken"
+      );
+
+      localStorage.removeItem(
+        "glowryAdminUser"
+      );
+
+      // =======================================
+      // SAVE ADMIN SESSION
+      // =======================================
+
       localStorage.setItem(
         "glowryAdminToken",
         token
@@ -45,9 +86,16 @@ function AdminLogin() {
         JSON.stringify(user)
       );
 
-      navigate("/admin/dashboard");
+      // =======================================
+      // GO TO ADMIN DASHBOARD
+      // =======================================
+
+      navigate("/admin/dashboard", {
+        replace: true,
+      });
 
     } catch (error) {
+
       console.error(
         "Admin Login Error:",
         error
@@ -59,14 +107,27 @@ function AdminLogin() {
       );
 
     } finally {
+
       setLoading(false);
+
     }
+
   };
 
+
+  // =========================================
+  // UI
+  // =========================================
+
   return (
+
     <main className="admin-login-page">
 
       <div className="admin-login-card">
+
+        {/* ===================================
+            HEADER
+        =================================== */}
 
         <p className="section-small-title">
           GLOWRY ADMIN
@@ -81,58 +142,94 @@ function AdminLogin() {
           administration panel.
         </p>
 
+
+        {/* ===================================
+            ERROR
+        =================================== */}
+
         {error && (
+
           <div className="admin-login-error">
+
             {error}
+
           </div>
+
         )}
+
+
+        {/* ===================================
+            LOGIN FORM
+        =================================== */}
 
         <form onSubmit={handleLogin}>
 
+          {/* EMAIL */}
+
           <div className="admin-form-group">
 
-            <label>
+            <label htmlFor="admin-email">
               Email
             </label>
 
             <input
+              id="admin-email"
               type="email"
               placeholder="Enter admin email"
               value={email}
-              onChange={(e) =>
-                setEmail(e.target.value)
-              }
+              onChange={(e) => {
+
+                setEmail(e.target.value);
+                setError("");
+
+              }}
+              autoComplete="username"
               required
+              disabled={loading}
             />
 
           </div>
 
+
+          {/* PASSWORD */}
+
           <div className="admin-form-group">
 
-            <label>
+            <label htmlFor="admin-password">
               Password
             </label>
 
             <input
+              id="admin-password"
               type="password"
               placeholder="Enter admin password"
               value={password}
-              onChange={(e) =>
-                setPassword(e.target.value)
-              }
+              onChange={(e) => {
+
+                setPassword(e.target.value);
+                setError("");
+
+              }}
+              autoComplete="current-password"
               required
+              disabled={loading}
             />
 
           </div>
+
+
+          {/* LOGIN BUTTON */}
 
           <button
             type="submit"
             disabled={loading}
             className="admin-login-button"
           >
+
             {loading
               ? "Logging in..."
               : "Login as Admin"}
+
           </button>
 
         </form>
@@ -140,7 +237,10 @@ function AdminLogin() {
       </div>
 
     </main>
+
   );
+
 }
 
 export default AdminLogin;
+

@@ -1,4 +1,27 @@
 import Cart from "../models/Cart.js";
+import Product from "../models/Product.js";
+
+
+// =========================================
+// HELPER — RETURN POPULATED CART
+// =========================================
+
+const getPopulatedCart = async (userId) => {
+  return await Cart.findOne({ userId })
+    .populate("items.product");
+};
+
+
+// =========================================
+// HELPER — CHECK CART OWNERSHIP
+// =========================================
+
+const isAuthorizedUser = (req, userId) => {
+  return (
+    req.user &&
+    String(req.user.id) === String(userId)
+  );
+};
 
 
 // =========================================
@@ -11,28 +34,40 @@ export const getCart = async (req, res) => {
 
     const { userId } = req.params;
 
-    let cart =
-      await Cart.findOne({
-        userId,
-      }).populate("items.product");
+    // ---------------------------------------
+    // SECURITY CHECK
+    // ---------------------------------------
 
+    if (!isAuthorizedUser(req, userId)) {
 
-    // =======================================
-    // CREATE EMPTY CART IF NOT EXISTS
-    // =======================================
-
-    if (!cart) {
-
-      cart = await Cart.create({
-
-        userId,
-
-        items: [],
-
+      return res.status(403).json({
+        message:
+          "You are not authorized to access this cart.",
       });
 
     }
 
+    // ---------------------------------------
+    // GET CART
+    // ---------------------------------------
+
+    let cart =
+      await getPopulatedCart(userId);
+
+    // ---------------------------------------
+    // CREATE EMPTY CART IF NOT EXISTS
+    // ---------------------------------------
+
+    if (!cart) {
+
+      cart = await Cart.create({
+        userId,
+        items: [],
+      });
+
+      cart =
+        await getPopulatedCart(userId);
+    }
 
     res.status(200).json(cart);
 
@@ -43,21 +78,14 @@ export const getCart = async (req, res) => {
       error
     );
 
-
     res.status(500).json({
-
       message:
         "Failed to fetch cart",
-
-      error:
-        error.message,
-
     });
 
   }
 
 };
-
 
 
 // =========================================
@@ -70,116 +98,146 @@ export const addToCart = async (req, res) => {
 
     const { userId } = req.params;
 
+    // ---------------------------------------
+    // SECURITY CHECK
+    // ---------------------------------------
+
+    if (!isAuthorizedUser(req, userId)) {
+
+      return res.status(403).json({
+        message:
+          "You are not authorized to access this cart.",
+      });
+
+    }
+
     const {
       productId,
       quantity = 1,
     } = req.body;
 
-
-    // =======================================
+    // ---------------------------------------
     // VALIDATE PRODUCT ID
-    // =======================================
+    // ---------------------------------------
 
     if (!productId) {
 
       return res.status(400).json({
-
         message:
           "Product ID is required",
-
       });
 
     }
 
+    // ---------------------------------------
+    // VALIDATE QUANTITY
+    // ---------------------------------------
 
-    // =======================================
-    // FIND USER CART
-    // =======================================
+    const requestedQuantity =
+      Number(quantity);
 
-    let cart =
-      await Cart.findOne({
-        userId,
+    if (
+      !Number.isInteger(requestedQuantity) ||
+      requestedQuantity < 1
+    ) {
+
+      return res.status(400).json({
+        message:
+          "Quantity must be at least 1",
       });
 
+    }
 
-    // =======================================
+    // ---------------------------------------
+    // FIND PRODUCT
+    // ---------------------------------------
+
+    const product =
+      await Product.findById(productId);
+
+    if (!product) {
+
+      return res.status(404).json({
+        message:
+          "Product not found",
+      });
+
+    }
+
+    // ---------------------------------------
+    // CHECK STOCK
+    // ---------------------------------------
+
+    if (
+      product.stock < requestedQuantity
+    ) {
+
+      return res.status(400).json({
+        message:
+          `Only ${product.stock} item(s) available in stock`,
+      });
+
+    }
+
+    // ---------------------------------------
+    // FIND USER CART
+    // ---------------------------------------
+
+    let cart =
+      await Cart.findOne({ userId });
+
+    // ---------------------------------------
     // CREATE CART IF NOT EXISTS
-    // =======================================
+    // ---------------------------------------
 
     if (!cart) {
 
       cart = new Cart({
-
         userId,
-
         items: [],
-
       });
 
     }
 
-
-    // =======================================
+    // ---------------------------------------
     // CHECK EXISTING PRODUCT
-    // =======================================
+    // ---------------------------------------
 
     const existingItem =
       cart.items.find(
-
         (item) =>
-
           String(item.product) ===
           String(productId)
-
       );
-
 
     if (existingItem) {
 
       return res.status(409).json({
-
         message:
           "Product is already in your cart",
-
       });
 
     }
 
-
-    // =======================================
+    // ---------------------------------------
     // ADD PRODUCT
-    // =======================================
+    // ---------------------------------------
 
     cart.items.push({
-
       product: productId,
-
-      quantity:
-        Number(quantity) || 1,
-
+      quantity: requestedQuantity,
     });
-
 
     await cart.save();
 
-
-    // =======================================
+    // ---------------------------------------
     // RETURN UPDATED CART
-    // =======================================
+    // ---------------------------------------
 
     const updatedCart =
-      await Cart.findOne({
+      await getPopulatedCart(userId);
 
-        userId,
-
-      }).populate(
-        "items.product"
-      );
-
-
-    res.status(201).json(
-      updatedCart
-    );
+    res.status(201).json(updatedCart);
 
   } catch (error) {
 
@@ -188,21 +246,14 @@ export const addToCart = async (req, res) => {
       error
     );
 
-
     res.status(500).json({
-
       message:
         "Failed to add product to cart",
-
-      error:
-        error.message,
-
     });
 
   }
 
 };
-
 
 
 // =========================================
@@ -219,114 +270,126 @@ export const updateCartQuantity =
         productId,
       } = req.params;
 
+      // ---------------------------------------
+      // SECURITY CHECK
+      // ---------------------------------------
+
+      if (!isAuthorizedUser(req, userId)) {
+
+        return res.status(403).json({
+          message:
+            "You are not authorized to access this cart.",
+        });
+
+      }
 
       const {
         quantity,
       } = req.body;
 
-
       const newQuantity =
         Number(quantity);
 
-
-      // =====================================
+      // ---------------------------------------
       // VALIDATE QUANTITY
-      // =====================================
+      // ---------------------------------------
 
       if (
-        !newQuantity ||
+        !Number.isInteger(newQuantity) ||
         newQuantity < 1
       ) {
 
         return res.status(400).json({
-
           message:
             "Quantity must be at least 1",
-
         });
 
       }
 
+      // ---------------------------------------
+      // FIND PRODUCT
+      // ---------------------------------------
 
-      // =====================================
-      // FIND CART
-      // =====================================
+      const product =
+        await Product.findById(productId);
 
-      const cart =
-        await Cart.findOne({
-          userId,
+      if (!product) {
+
+        return res.status(404).json({
+          message:
+            "Product not found",
         });
 
+      }
+
+      // ---------------------------------------
+      // CHECK STOCK
+      // ---------------------------------------
+
+      if (
+        product.stock < newQuantity
+      ) {
+
+        return res.status(400).json({
+          message:
+            `Only ${product.stock} item(s) available in stock`,
+        });
+
+      }
+
+      // ---------------------------------------
+      // FIND CART
+      // ---------------------------------------
+
+      const cart =
+        await Cart.findOne({ userId });
 
       if (!cart) {
 
         return res.status(404).json({
-
           message:
             "Cart not found",
-
         });
 
       }
 
-
-      // =====================================
-      // FIND PRODUCT
-      // =====================================
+      // ---------------------------------------
+      // FIND CART ITEM
+      // ---------------------------------------
 
       const item =
         cart.items.find(
-
           (cartItem) =>
-
-            String(
-              cartItem.product
-            ) ===
+            String(cartItem.product) ===
             String(productId)
-
         );
-
 
       if (!item) {
 
         return res.status(404).json({
-
           message:
             "Product not found in cart",
-
         });
 
       }
 
-
-      // =====================================
+      // ---------------------------------------
       // UPDATE QUANTITY
-      // =====================================
+      // ---------------------------------------
 
       item.quantity =
         newQuantity;
 
-
       await cart.save();
 
-
-      // =====================================
+      // ---------------------------------------
       // RETURN UPDATED CART
-      // =====================================
+      // ---------------------------------------
 
       const updatedCart =
-        await Cart.findOne({
+        await getPopulatedCart(userId);
 
-          userId,
-
-        }).populate(
-          "items.product"
-        );
-
-
-      res.status(200).json(
-        updatedCart
-      );
+      res.status(200).json(updatedCart);
 
     } catch (error) {
 
@@ -335,21 +398,14 @@ export const updateCartQuantity =
         error
       );
 
-
       res.status(500).json({
-
         message:
           "Failed to update cart",
-
-        error:
-          error.message,
-
       });
 
     }
 
   };
-
 
 
 // =========================================
@@ -366,45 +422,48 @@ export const removeFromCart =
         productId,
       } = req.params;
 
+      // ---------------------------------------
+      // SECURITY CHECK
+      // ---------------------------------------
 
-      const cart =
-        await Cart.findOne({
-          userId,
-        });
+      if (!isAuthorizedUser(req, userId)) {
 
-
-      if (!cart) {
-
-        return res.status(404).json({
-
+        return res.status(403).json({
           message:
-            "Cart not found",
-
+            "You are not authorized to access this cart.",
         });
 
       }
 
+      // ---------------------------------------
+      // FIND CART
+      // ---------------------------------------
 
-      // =====================================
-      // REMOVE PRODUCT
-      // =====================================
+      const cart =
+        await Cart.findOne({ userId });
+
+      if (!cart) {
+
+        return res.status(404).json({
+          message:
+            "Cart not found",
+        });
+
+      }
+
+      // ---------------------------------------
+      // CHECK PRODUCT IN CART
+      // ---------------------------------------
 
       const originalLength =
         cart.items.length;
 
-
       cart.items =
         cart.items.filter(
-
           (item) =>
-
-            String(
-              item.product
-            ) !==
+            String(item.product) !==
             String(productId)
-
         );
-
 
       if (
         cart.items.length ===
@@ -412,35 +471,22 @@ export const removeFromCart =
       ) {
 
         return res.status(404).json({
-
           message:
             "Product not found in cart",
-
         });
 
       }
 
-
       await cart.save();
 
-
-      // =====================================
+      // ---------------------------------------
       // RETURN UPDATED CART
-      // =====================================
+      // ---------------------------------------
 
       const updatedCart =
-        await Cart.findOne({
+        await getPopulatedCart(userId);
 
-          userId,
-
-        }).populate(
-          "items.product"
-        );
-
-
-      res.status(200).json(
-        updatedCart
-      );
+      res.status(200).json(updatedCart);
 
     } catch (error) {
 
@@ -449,21 +495,14 @@ export const removeFromCart =
         error
       );
 
-
       res.status(500).json({
-
         message:
           "Failed to remove product",
-
-        error:
-          error.message,
-
       });
 
     }
 
   };
-
 
 
 // =========================================
@@ -478,38 +517,51 @@ export const clearCart =
       const { userId } =
         req.params;
 
+      // ---------------------------------------
+      // SECURITY CHECK
+      // ---------------------------------------
 
-      const cart =
-        await Cart.findOne({
-          userId,
-        });
+      if (!isAuthorizedUser(req, userId)) {
 
-
-      if (!cart) {
-
-        return res.status(404).json({
-
+        return res.status(403).json({
           message:
-            "Cart not found",
-
+            "You are not authorized to access this cart.",
         });
 
       }
 
+      // ---------------------------------------
+      // FIND CART
+      // ---------------------------------------
+
+      const cart =
+        await Cart.findOne({ userId });
+
+      if (!cart) {
+
+        return res.status(404).json({
+          message:
+            "Cart not found",
+        });
+
+      }
+
+      // ---------------------------------------
+      // CLEAR CART
+      // ---------------------------------------
 
       cart.items = [];
 
-
       await cart.save();
 
+      // ---------------------------------------
+      // RESPONSE
+      // ---------------------------------------
 
       res.status(200).json({
-
         message:
           "Cart cleared successfully",
-
         cart,
-
       });
 
     } catch (error) {
@@ -519,15 +571,9 @@ export const clearCart =
         error
       );
 
-
       res.status(500).json({
-
         message:
           "Failed to clear cart",
-
-        error:
-          error.message,
-
       });
 
     }

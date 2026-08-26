@@ -8,6 +8,11 @@ import {
   clearCart,
 } from "../controllers/cartController.js";
 
+import {
+  protect,
+  authorizeUser,
+} from "../middleware/authMiddleware.js";
+
 
 const router = express.Router();
 
@@ -18,6 +23,8 @@ const router = express.Router();
 
 router.get(
   "/:userId",
+  protect,
+  authorizeUser,
   getCart
 );
 
@@ -28,6 +35,8 @@ router.get(
 
 router.post(
   "/:userId",
+  protect,
+  authorizeUser,
   addToCart
 );
 
@@ -38,6 +47,8 @@ router.post(
 
 router.put(
   "/:userId/:productId",
+  protect,
+  authorizeUser,
   updateCartQuantity
 );
 
@@ -48,6 +59,8 @@ router.put(
 
 router.delete(
   "/:userId/:productId",
+  protect,
+  authorizeUser,
   removeFromCart
 );
 
@@ -58,6 +71,8 @@ router.delete(
 
 router.delete(
   "/:userId",
+  protect,
+  authorizeUser,
   clearCart
 );
 

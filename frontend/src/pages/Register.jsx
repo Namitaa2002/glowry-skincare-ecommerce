@@ -9,6 +9,10 @@ import {
 
 import axios from "axios";
 
+import {
+  API_BASE_URL,
+} from "../config/api";
+
 
 function Register() {
 
@@ -167,7 +171,7 @@ function Register() {
       const response =
         await axios.post(
 
-          "http://localhost:5000/api/auth/register",
+          `${API_BASE_URL}/auth/register`,
 
           {
 
@@ -229,6 +233,7 @@ function Register() {
         setError(
 
           error.response.data?.message ||
+
           "Registration failed. Please try again."
 
         );

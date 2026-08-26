@@ -1,3 +1,5 @@
+/* eslint-disable react-refresh/only-export-components */
+
 import {
   createContext,
   useContext,
@@ -6,93 +8,76 @@ import {
 } from "react";
 
 import axios from "axios";
-
+import { API_BASE_URL } from "../config/api";
 
 // =========================================
 // CREATE CONTEXT
 // =========================================
 
-const WishlistContext = createContext();
-
-
-// =========================================
-// USER ID
-// =========================================
-
-const USER_ID = "namita";
-
+const WishlistContext =
+  createContext();
 
 // =========================================
 // API URL
 // =========================================
 
 const API_URL =
-  "http://localhost:5000/api/wishlist";
-
+  `${API_BASE_URL}/wishlist`;
 
 // =========================================
-// WISHLIST PROVIDER
+// GET AUTH DATA
 // =========================================
 
-export function WishlistProvider({ children }) {
+const getAuthData = () => {
+  try {
+    const token =
+      localStorage.getItem(
+        "glowryToken"
+      );
 
-  // =======================================
-  // WISHLIST
-  // =======================================
+    const userData =
+      localStorage.getItem(
+        "glowryLoggedInUser"
+      );
 
-  const [wishlist, setWishlist] =
-    useState([]);
+    const user =
+      userData
+        ? JSON.parse(userData)
+        : null;
 
+    return {
+      token,
+      user,
+    };
+  } catch (error) {
+    console.error(
+      "Auth Data Error:",
+      error
+    );
 
-  // =======================================
-  // LOADING
-  // =======================================
+    return {
+      token: null,
+      user: null,
+    };
+  }
+};
 
-  const [loading, setLoading] =
-    useState(true);
+// =========================================
+// FORMAT BACKEND WISHLIST
+// =========================================
 
+const formatWishlist = (
+  data
+) => {
+  if (
+    !data ||
+    !data.items
+  ) {
+    return [];
+  }
 
-  // =======================================
-  // TOAST
-  // =======================================
-
-  const [toast, setToast] =
-    useState("");
-
-
-  // =======================================
-  // SHOW TOAST
-  // =======================================
-
-  const showToast = (message) => {
-
-    setToast(message);
-
-    setTimeout(() => {
-      setToast("");
-    }, 2500);
-
-  };
-
-
-  // =======================================
-  // FORMAT BACKEND WISHLIST
-  // =======================================
-
-  const formatWishlist = (data) => {
-
-    if (
-      !data ||
-      !data.items
-    ) {
-
-      return [];
-
-    }
-
-
-    return data.items.map((item) => ({
-
+  return data.items.map(
+    (item) => ({
       id:
         item.product?._id ||
         item.product,
@@ -106,13 +91,20 @@ export function WishlistProvider({ children }) {
 
       image:
         item.image
-          ? item.image.startsWith("http")
+          ? item.image.startsWith(
+              "http"
+            )
             ? item.image
-            : `http://localhost:5000${item.image}`
+            : `${API_BASE_URL.replace(
+                "/api",
+                ""
+              )}${item.image}`
           : "",
 
       price:
-        Number(item.price || 0),
+        Number(
+          item.price || 0
+        ),
 
       originalPrice:
         Number(
@@ -120,167 +112,289 @@ export function WishlistProvider({ children }) {
         ),
 
       category:
-        item.category || "SKINCARE",
+        item.category ||
+        "SKINCARE",
 
       rating:
-        Number(item.rating || 0),
+        Number(
+          item.rating || 0
+        ),
+    })
+  );
+};
 
-    }));
+// =========================================
+// WISHLIST PROVIDER
+// =========================================
 
+export function WishlistProvider({
+  children,
+}) {
+  // =======================================
+  // WISHLIST
+  // =======================================
+
+  const [wishlist, setWishlist] =
+    useState([]);
+
+  // =======================================
+  // LOADING
+  // =======================================
+
+  const [loading, setLoading] =
+    useState(true);
+
+  // =======================================
+  // TOAST
+  // =======================================
+
+  const [toast, setToast] =
+    useState("");
+
+  // =======================================
+  // SHOW TOAST
+  // =======================================
+
+  const showToast = (
+    message
+  ) => {
+    setToast(message);
+
+    setTimeout(() => {
+      setToast("");
+    }, 2500);
   };
-
 
   // =======================================
   // FETCH WISHLIST
   // =======================================
 
-  const fetchWishlist = async () => {
+  const fetchWishlist =
+    async () => {
+      try {
+        setLoading(true);
 
-    try {
+        // =================================
+        // GET AUTH DATA
+        // =================================
 
-      setLoading(true);
+        const {
+          token,
+          user,
+        } = getAuthData();
 
+        // =================================
+        // CHECK LOGIN
+        // =================================
 
-      const response =
-        await axios.get(
-          `${API_URL}/${USER_ID}`
+        if (
+          !token ||
+          !user?.id
+        ) {
+          setWishlist([]);
+          return;
+        }
+
+        // =================================
+        // GET WISHLIST
+        // =================================
+
+        const response =
+          await axios.get(
+            `${API_URL}/${user.id}`,
+            {
+              headers: {
+                Authorization:
+                  `Bearer ${token}`,
+              },
+            }
+          );
+
+        // =================================
+        // FORMAT RESPONSE
+        // =================================
+
+        setWishlist(
+          formatWishlist(
+            response.data
+          )
+        );
+      } catch (error) {
+        console.error(
+          "Fetch Wishlist Error:",
+          error
         );
 
+        // =================================
+        // UNAUTHORIZED
+        // =================================
 
-      setWishlist(
-        formatWishlist(
-          response.data
-        )
-      );
-
-
-    } catch (error) {
-
-      console.error(
-        "Fetch Wishlist Error:",
-        error
-      );
-
-      showToast(
-        "Failed to load wishlist"
-      );
-
-    } finally {
-
-      setLoading(false);
-
-    }
-
-  };
-
+        if (
+          error.response?.status ===
+            401 ||
+          error.response?.status ===
+            403
+        ) {
+          setWishlist([]);
+        } else {
+          showToast(
+            "Failed to load wishlist"
+          );
+        }
+      } finally {
+        setLoading(false);
+      }
+    };
 
   // =======================================
   // LOAD WISHLIST
   // =======================================
 
   useEffect(() => {
-
+    // Initial wishlist synchronization
+    // with the backend.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     fetchWishlist();
-
   }, []);
-
 
   // =======================================
   // ADD TO WISHLIST
   // =======================================
 
-  const addToWishlist = async (product) => {
+  const addToWishlist =
+    async (product) => {
+      try {
+        // =================================
+        // GET AUTH DATA
+        // =================================
 
-    try {
+        const {
+          token,
+          user,
+        } = getAuthData();
 
-      const response =
-        await axios.post(
+        // =================================
+        // CHECK LOGIN
+        // =================================
 
-          `${API_URL}/${USER_ID}`,
+        if (
+          !token ||
+          !user?.id
+        ) {
+          showToast(
+            "Please login to add products to wishlist"
+          );
 
-          {
+          return false;
+        }
 
-            product:
-              product.id,
+        // =================================
+        // ADD PRODUCT
+        // =================================
 
-            name:
-              product.name,
+        const response =
+          await axios.post(
+            `${API_URL}/${user.id}`,
+            {
+              product:
+                product.id,
 
-            image:
-              product.image,
+              name:
+                product.name,
 
-            price:
-              Number(
-                product.price || 0
-              ),
+              image:
+                product.image,
 
-            originalPrice:
-              Number(
-                product.originalPrice || 0
-              ),
+              price:
+                Number(
+                  product.price || 0
+                ),
 
-            category:
-              product.category || "SKINCARE",
+              originalPrice:
+                Number(
+                  product.originalPrice ||
+                    0
+                ),
 
-            rating:
-              Number(
-                product.rating || 0
-              ),
+              category:
+                product.category ||
+                "SKINCARE",
 
-          }
+              rating:
+                Number(
+                  product.rating || 0
+                ),
+            },
+            {
+              headers: {
+                Authorization:
+                  `Bearer ${token}`,
+              },
+            }
+          );
 
+        // =================================
+        // UPDATE WISHLIST
+        // =================================
+
+        setWishlist(
+          formatWishlist(
+            response.data
+          )
         );
-
-
-      setWishlist(
-        formatWishlist(
-          response.data
-        )
-      );
-
-
-      showToast(
-        "Added to wishlist ♡"
-      );
-
-
-      return true;
-
-
-    } catch (error) {
-
-      // =================================
-      // DUPLICATE PRODUCT
-      // =================================
-
-      if (
-        error.response?.status === 409
-      ) {
 
         showToast(
-          "Product is already in wishlist ♡"
+          "Added to wishlist ♡"
         );
 
-      } else {
+        return true;
+      } catch (error) {
+        // =================================
+        // DUPLICATE PRODUCT
+        // =================================
 
-        console.error(
-          "Add Wishlist Error:",
-          error
-        );
+        if (
+          error.response?.status ===
+          409
+        ) {
+          showToast(
+            "Product is already in wishlist ♡"
+          );
+        }
 
-        showToast(
-          "Failed to add to wishlist"
-        );
+        // =================================
+        // UNAUTHORIZED
+        // =================================
 
+        else if (
+          error.response?.status ===
+            401 ||
+          error.response?.status ===
+            403
+        ) {
+          showToast(
+            "Please login to manage your wishlist"
+          );
+        }
+
+        // =================================
+        // OTHER ERROR
+        // =================================
+
+        else {
+          console.error(
+            "Add Wishlist Error:",
+            error
+          );
+
+          showToast(
+            "Failed to add to wishlist"
+          );
+        }
+
+        return false;
       }
-
-
-      return false;
-
-    }
-
-  };
-
+    };
 
   // =======================================
   // REMOVE FROM WISHLIST
@@ -288,44 +402,96 @@ export function WishlistProvider({ children }) {
 
   const removeFromWishlist =
     async (productId) => {
-
       try {
+        // =================================
+        // GET AUTH DATA
+        // =================================
+
+        const {
+          token,
+          user,
+        } = getAuthData();
+
+        // =================================
+        // CHECK LOGIN
+        // =================================
+
+        if (
+          !token ||
+          !user?.id
+        ) {
+          showToast(
+            "Please login to manage your wishlist"
+          );
+
+          return false;
+        }
+
+        // =================================
+        // DELETE PRODUCT
+        // =================================
 
         const response =
           await axios.delete(
-
-            `${API_URL}/${USER_ID}/${productId}`
-
+            `${API_URL}/${user.id}/${productId}`,
+            {
+              headers: {
+                Authorization:
+                  `Bearer ${token}`,
+              },
+            }
           );
 
+        // =================================
+        // UPDATE WISHLIST
+        // =================================
 
         setWishlist(
           formatWishlist(
-            response.data.wishlist
+            response.data
+              .wishlist
           )
         );
-
 
         showToast(
           "Removed from wishlist"
         );
 
-
+        return true;
       } catch (error) {
+        // =================================
+        // UNAUTHORIZED
+        // =================================
 
-        console.error(
-          "Remove Wishlist Error:",
-          error
-        );
+        if (
+          error.response?.status ===
+            401 ||
+          error.response?.status ===
+            403
+        ) {
+          showToast(
+            "Please login to manage your wishlist"
+          );
+        }
 
-        showToast(
-          "Failed to remove product"
-        );
+        // =================================
+        // OTHER ERROR
+        // =================================
 
+        else {
+          console.error(
+            "Remove Wishlist Error:",
+            error
+          );
+
+          showToast(
+            "Failed to remove product"
+          );
+        }
+
+        return false;
       }
-
     };
-
 
   // =======================================
   // TOGGLE WISHLIST
@@ -333,11 +499,9 @@ export function WishlistProvider({ children }) {
 
   const toggleWishlist =
     async (product) => {
-
       const productId =
         product.id ||
         product.productId;
-
 
       const alreadyExists =
         wishlist.some(
@@ -346,22 +510,16 @@ export function WishlistProvider({ children }) {
             String(productId)
         );
 
-
       if (alreadyExists) {
-
-        await removeFromWishlist(
+        return await removeFromWishlist(
           productId
         );
-
-        return;
-
       }
 
-
-      await addToWishlist(product);
-
+      return await addToWishlist(
+        product
+      );
     };
-
 
   // =======================================
   // CHECK WISHLIST
@@ -369,25 +527,20 @@ export function WishlistProvider({ children }) {
 
   const isInWishlist =
     (productId) => {
-
       return wishlist.some(
         (item) =>
           String(item.id) ===
           String(productId)
       );
-
     };
-
 
   // =======================================
   // PROVIDER
   // =======================================
 
   return (
-
     <WishlistContext.Provider
       value={{
-
         wishlist,
 
         loading,
@@ -403,27 +556,19 @@ export function WishlistProvider({ children }) {
         isInWishlist,
 
         fetchWishlist,
-
       }}
     >
-
       {children}
-
     </WishlistContext.Provider>
-
   );
-
 }
-
 
 // =========================================
 // CUSTOM HOOK
 // =========================================
 
 export function useWishlist() {
-
   return useContext(
     WishlistContext
   );
-
 }

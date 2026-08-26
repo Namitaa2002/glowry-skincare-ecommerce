@@ -1,6 +1,17 @@
-import { useEffect, useState } from "react";
+
+import {
+  useEffect,
+  useState,
+} from "react";
+
 import { useNavigate } from "react-router-dom";
+
 import axios from "axios";
+
+import {
+  API_BASE_URL,
+  SERVER_BASE_URL,
+} from "../config/api";
 
 
 function AdminProducts() {
@@ -15,10 +26,8 @@ function AdminProducts() {
   const [products, setProducts] =
     useState([]);
 
-
   const [loading, setLoading] =
     useState(true);
-
 
   const [error, setError] =
     useState("");
@@ -31,10 +40,8 @@ function AdminProducts() {
   const [showModal, setShowModal] =
     useState(false);
 
-
   const [editingProduct, setEditingProduct] =
     useState(null);
-
 
   const [saving, setSaving] =
     useState(false);
@@ -46,7 +53,6 @@ function AdminProducts() {
 
   const [deleteProduct, setDeleteProduct] =
     useState(null);
-
 
   const [deleting, setDeleting] =
     useState(false);
@@ -92,131 +98,111 @@ function AdminProducts() {
   const getImageUrl = (image) => {
 
     if (!image) {
-
       return "";
-
     }
 
-
-    if (
-      image.startsWith("http")
-    ) {
-
+    if (image.startsWith("http")) {
       return image;
-
     }
 
-
-    return `http://localhost:5000${image}`;
+    return `${SERVER_BASE_URL}${image}`;
 
   };
 
 
   // =====================================================
-  // FETCH PRODUCTS
+  // INITIAL FETCH
   // =====================================================
-
-  const fetchProducts = async () => {
-
-    try {
-
-      setLoading(true);
-
-      setError("");
-
-
-      const token =
-        localStorage.getItem(
-          "glowryAdminToken"
-        );
-
-
-      if (!token) {
-
-        navigate(
-          "/admin/login"
-        );
-
-        return;
-
-      }
-
-
-      const response =
-        await axios.get(
-
-          "http://localhost:5000/api/admin/products",
-
-          {
-            headers: {
-
-              Authorization:
-                `Bearer ${token}`,
-
-            },
-
-          }
-
-        );
-
-
-      setProducts(
-        response.data
-      );
-
-
-    } catch (error) {
-
-      console.error(
-        "Fetch Admin Products Error:",
-        error
-      );
-
-
-      if (
-        error.response?.status === 401 ||
-        error.response?.status === 403
-      ) {
-
-        localStorage.removeItem(
-          "glowryAdminToken"
-        );
-
-        localStorage.removeItem(
-          "glowryAdminUser"
-        );
-
-        navigate(
-          "/admin/login"
-        );
-
-        return;
-
-      }
-
-
-      setError(
-
-        error.response?.data?.message ||
-
-        "Unable to load products."
-
-      );
-
-    } finally {
-
-      setLoading(false);
-
-    }
-
-  };
-
 
   useEffect(() => {
 
+    const fetchProducts = async () => {
+
+      try {
+
+        setLoading(true);
+
+        setError("");
+
+
+        const token =
+          localStorage.getItem(
+            "glowryAdminToken"
+          );
+
+
+        if (!token) {
+
+          navigate("/admin/login");
+
+          return;
+
+        }
+
+
+        const response =
+          await axios.get(
+            `${API_BASE_URL}/admin/products`,
+            {
+              headers: {
+                Authorization:
+                  `Bearer ${token}`,
+              },
+            }
+          );
+
+
+        setProducts(
+          response.data || []
+        );
+
+
+      } catch (error) {
+
+        console.error(
+          "Fetch Admin Products Error:",
+          error
+        );
+
+
+        if (
+          error.response?.status === 401 ||
+          error.response?.status === 403
+        ) {
+
+          localStorage.removeItem(
+            "glowryAdminToken"
+          );
+
+          localStorage.removeItem(
+            "glowryAdminUser"
+          );
+
+          navigate("/admin/login");
+
+          return;
+
+        }
+
+
+        setError(
+          error.response?.data?.message ||
+          "Unable to load products."
+        );
+
+
+      } finally {
+
+        setLoading(false);
+
+      }
+
+    };
+
+
     fetchProducts();
 
-  }, []);
+  }, [navigate]);
 
 
   // =====================================================
@@ -233,11 +219,8 @@ function AdminProducts() {
 
     setFormData(
       (previous) => ({
-
         ...previous,
-
         [name]: value,
-
       })
     );
 
@@ -252,9 +235,7 @@ function AdminProducts() {
 
     setEditingProduct(null);
 
-    setFormData(
-      initialForm
-    );
+    setFormData(initialForm);
 
     setShowModal(true);
 
@@ -267,9 +248,7 @@ function AdminProducts() {
 
   const handleEdit = (product) => {
 
-    setEditingProduct(
-      product
-    );
+    setEditingProduct(product);
 
 
     setFormData({
@@ -319,9 +298,7 @@ function AdminProducts() {
   const closeModal = () => {
 
     if (saving) {
-
       return;
-
     }
 
 
@@ -329,9 +306,7 @@ function AdminProducts() {
 
     setEditingProduct(null);
 
-    setFormData(
-      initialForm
-    );
+    setFormData(initialForm);
 
   };
 
@@ -358,9 +333,7 @@ function AdminProducts() {
 
       if (!token) {
 
-        navigate(
-          "/admin/login"
-        );
+        navigate("/admin/login");
 
         return;
 
@@ -403,7 +376,7 @@ function AdminProducts() {
 
 
       // =================================================
-      // UPDATE
+      // UPDATE PRODUCT
       // =================================================
 
       if (editingProduct) {
@@ -411,18 +384,15 @@ function AdminProducts() {
         const response =
           await axios.put(
 
-            `http://localhost:5000/api/admin/products/${editingProduct._id}`,
+            `${API_BASE_URL}/admin/products/${editingProduct._id}`,
 
             productData,
 
             {
               headers: {
-
                 Authorization:
                   `Bearer ${token}`,
-
               },
-
             }
 
           );
@@ -441,11 +411,11 @@ function AdminProducts() {
             )
         );
 
-
       }
 
+
       // =================================================
-      // ADD
+      // ADD PRODUCT
       // =================================================
 
       else {
@@ -453,18 +423,15 @@ function AdminProducts() {
         const response =
           await axios.post(
 
-            "http://localhost:5000/api/admin/products",
+            `${API_BASE_URL}/admin/products`,
 
             productData,
 
             {
               headers: {
-
                 Authorization:
                   `Bearer ${token}`,
-
               },
-
             }
 
           );
@@ -472,11 +439,8 @@ function AdminProducts() {
 
         setProducts(
           (previous) => [
-
             response.data.product,
-
             ...previous,
-
           ]
         );
 
@@ -495,12 +459,10 @@ function AdminProducts() {
 
 
       alert(
-
         error.response?.data?.message ||
-
         "Unable to save product."
-
       );
+
 
     } finally {
 
@@ -517,9 +479,7 @@ function AdminProducts() {
 
   const handleDeleteClick = (product) => {
 
-    setDeleteProduct(
-      product
-    );
+    setDeleteProduct(product);
 
   };
 
@@ -531,9 +491,7 @@ function AdminProducts() {
   const confirmDelete = async () => {
 
     if (!deleteProduct) {
-
       return;
-
     }
 
 
@@ -548,18 +506,24 @@ function AdminProducts() {
         );
 
 
+      if (!token) {
+
+        navigate("/admin/login");
+
+        return;
+
+      }
+
+
       await axios.delete(
 
-        `http://localhost:5000/api/admin/products/${deleteProduct._id}`,
+        `${API_BASE_URL}/admin/products/${deleteProduct._id}`,
 
         {
           headers: {
-
             Authorization:
               `Bearer ${token}`,
-
           },
-
         }
 
       );
@@ -575,9 +539,7 @@ function AdminProducts() {
       );
 
 
-      setDeleteProduct(
-        null
-      );
+      setDeleteProduct(null);
 
 
     } catch (error) {
@@ -589,12 +551,10 @@ function AdminProducts() {
 
 
       alert(
-
         error.response?.data?.message ||
-
         "Unable to delete product."
-
       );
+
 
     } finally {
 
@@ -654,10 +614,9 @@ function AdminProducts() {
           </p>
 
           <button
+            type="button"
             onClick={() =>
-              navigate(
-                "/admin/dashboard"
-              )
+              navigate("/admin/dashboard")
             }
           >
             Back to Dashboard
@@ -708,11 +667,10 @@ function AdminProducts() {
         <div className="admin-products-header-actions">
 
           <button
+            type="button"
             className="admin-products-back"
             onClick={() =>
-              navigate(
-                "/admin/dashboard"
-              )
+              navigate("/admin/dashboard")
             }
           >
             ← Dashboard
@@ -720,10 +678,9 @@ function AdminProducts() {
 
 
           <button
+            type="button"
             className="admin-products-add"
-            onClick={
-              handleAddProduct
-            }
+            onClick={handleAddProduct}
           >
             + Add Product
           </button>
@@ -835,9 +792,7 @@ function AdminProducts() {
 
                 <div
                   className="admin-products-row"
-                  key={
-                    product._id
-                  }
+                  key={product._id}
                 >
 
 
@@ -850,14 +805,10 @@ function AdminProducts() {
                       {product.image ? (
 
                         <img
-                          src={
-                            getImageUrl(
-                              product.image
-                            )
-                          }
-                          alt={
-                            product.name
-                          }
+                          src={getImageUrl(
+                            product.image
+                          )}
+                          alt={product.name}
                         />
 
                       ) : (
@@ -924,18 +875,14 @@ function AdminProducts() {
                     className={`
                       admin-product-stock
                       ${
-                        Number(
-                          product.stock
-                        ) > 0
+                        Number(product.stock) > 0
                           ? "in-stock"
                           : "out-of-stock"
                       }
                     `}
                   >
 
-                    {Number(
-                      product.stock
-                    ) > 0
+                    {Number(product.stock) > 0
 
                       ? `${product.stock} available`
 
@@ -952,9 +899,7 @@ function AdminProducts() {
                       type="button"
                       className="admin-product-edit"
                       onClick={() =>
-                        handleEdit(
-                          product
-                        )
+                        handleEdit(product)
                       }
                     >
                       Edit
@@ -965,9 +910,7 @@ function AdminProducts() {
                       type="button"
                       className="admin-product-delete"
                       onClick={() =>
-                        handleDeleteClick(
-                          product
-                        )
+                        handleDeleteClick(product)
                       }
                     >
                       Delete
@@ -1030,9 +973,7 @@ function AdminProducts() {
 
             <form
               className="admin-product-form"
-              onSubmit={
-                handleSubmit
-              }
+              onSubmit={handleSubmit}
             >
 
 
@@ -1047,12 +988,8 @@ function AdminProducts() {
                 <input
                   type="text"
                   name="name"
-                  value={
-                    formData.name
-                  }
-                  onChange={
-                    handleChange
-                  }
+                  value={formData.name}
+                  onChange={handleChange}
                   placeholder="e.g. Berry Lip Mask"
                   required
                 />
@@ -1072,12 +1009,8 @@ function AdminProducts() {
 
                   <select
                     name="category"
-                    value={
-                      formData.category
-                    }
-                    onChange={
-                      handleChange
-                    }
+                    value={formData.category}
+                    onChange={handleChange}
                   >
 
                     <option value="Cleansers">
@@ -1129,12 +1062,8 @@ function AdminProducts() {
                     type="number"
                     name="stock"
                     min="0"
-                    value={
-                      formData.stock
-                    }
-                    onChange={
-                      handleChange
-                    }
+                    value={formData.stock}
+                    onChange={handleChange}
                     placeholder="0"
                   />
 
@@ -1157,12 +1086,8 @@ function AdminProducts() {
                     type="number"
                     name="price"
                     min="0"
-                    value={
-                      formData.price
-                    }
-                    onChange={
-                      handleChange
-                    }
+                    value={formData.price}
+                    onChange={handleChange}
                     placeholder="499"
                     required
                   />
@@ -1180,12 +1105,8 @@ function AdminProducts() {
                     type="number"
                     name="originalPrice"
                     min="0"
-                    value={
-                      formData.originalPrice
-                    }
-                    onChange={
-                      handleChange
-                    }
+                    value={formData.originalPrice}
+                    onChange={handleChange}
                     placeholder="699"
                     required
                   />
@@ -1206,12 +1127,8 @@ function AdminProducts() {
                 <input
                   type="text"
                   name="image"
-                  value={
-                    formData.image
-                  }
-                  onChange={
-                    handleChange
-                  }
+                  value={formData.image}
+                  onChange={handleChange}
                   placeholder="/images/product.jpg"
                   required
                 />
@@ -1234,12 +1151,8 @@ function AdminProducts() {
                 <textarea
                   name="description"
                   rows="4"
-                  value={
-                    formData.description
-                  }
-                  onChange={
-                    handleChange
-                  }
+                  value={formData.description}
+                  onChange={handleChange}
                   placeholder="Write product description..."
                 />
 
@@ -1262,12 +1175,8 @@ function AdminProducts() {
                     min="0"
                     max="5"
                     step="0.1"
-                    value={
-                      formData.rating
-                    }
-                    onChange={
-                      handleChange
-                    }
+                    value={formData.rating}
+                    onChange={handleChange}
                     placeholder="4.5"
                   />
 
@@ -1284,12 +1193,8 @@ function AdminProducts() {
                     type="number"
                     name="reviews"
                     min="0"
-                    value={
-                      formData.reviews
-                    }
-                    onChange={
-                      handleChange
-                    }
+                    value={formData.reviews}
+                    onChange={handleChange}
                     placeholder="120"
                   />
 
@@ -1305,9 +1210,7 @@ function AdminProducts() {
                 <button
                   type="button"
                   className="admin-product-form-cancel"
-                  onClick={
-                    closeModal
-                  }
+                  onClick={closeModal}
                   disabled={saving}
                 >
                   Cancel
@@ -1380,9 +1283,7 @@ function AdminProducts() {
                 type="button"
                 className="admin-delete-cancel"
                 onClick={() =>
-                  setDeleteProduct(
-                    null
-                  )
+                  setDeleteProduct(null)
                 }
                 disabled={deleting}
               >
@@ -1393,9 +1294,7 @@ function AdminProducts() {
               <button
                 type="button"
                 className="admin-delete-confirm"
-                onClick={
-                  confirmDelete
-                }
+                onClick={confirmDelete}
                 disabled={deleting}
               >
 
@@ -1421,3 +1320,4 @@ function AdminProducts() {
 
 
 export default AdminProducts;
+

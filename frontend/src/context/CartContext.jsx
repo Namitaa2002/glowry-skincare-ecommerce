@@ -1,3 +1,5 @@
+ /* eslint-disable react-refresh/only-export-components */
+
 import {
   createContext,
   useContext,
@@ -6,7 +8,7 @@ import {
 } from "react";
 
 import axios from "axios";
-
+import { API_BASE_URL } from "../config/api";
 
 // =========================================
 // CREATE CONTEXT
@@ -14,33 +16,83 @@ import axios from "axios";
 
 const CartContext = createContext();
 
-
-// =========================================
-// USER ID
-// =========================================
-
-const USER_ID = "namita";
-
-
 // =========================================
 // API URL
 // =========================================
 
-const API_URL = "http://localhost:5000/api/cart";
+const API_URL = `${API_BASE_URL}/cart`;
 
+// =========================================
+// GET AUTH DATA
+// =========================================
+
+const getAuthData = () => {
+  try {
+    const token =
+      localStorage.getItem("glowryToken");
+
+    const storedUser =
+      localStorage.getItem(
+        "glowryLoggedInUser"
+      );
+
+    const user = storedUser
+      ? JSON.parse(storedUser)
+      : null;
+
+    const userId =
+      user?.id ||
+      user?._id ||
+      user?.userId;
+
+    return {
+      token,
+      userId,
+    };
+  } catch (error) {
+    console.error(
+      "Get Auth Data Error:",
+      error
+    );
+
+    return {
+      token: null,
+      userId: null,
+    };
+  }
+};
+
+// =========================================
+// AUTH HEADERS
+// =========================================
+
+const getAuthHeaders = () => {
+  const { token } =
+    getAuthData();
+
+  if (!token) {
+    return {};
+  }
+
+  return {
+    Authorization:
+      `Bearer ${token}`,
+  };
+};
 
 // =========================================
 // CART PROVIDER
 // =========================================
 
-export function CartProvider({ children }) {
-
+export function CartProvider({
+  children,
+}) {
   // =======================================
   // CART
   // =======================================
 
-  const [cart, setCart] = useState([]);
-
+  const [cart, setCart] =
+    useState([]);
 
   // =======================================
   // LOADING
@@ -49,14 +101,12 @@ export function CartProvider({ children }) {
   const [loading, setLoading] =
     useState(true);
 
-
   // =======================================
   // TOAST
   // =======================================
 
   const [toast, setToast] =
     useState("");
-
 
   // =======================================
   // COUPON
@@ -68,223 +118,301 @@ export function CartProvider({ children }) {
   const [discount, setDiscount] =
     useState(0);
 
-
   // =======================================
   // SHOW TOAST
   // =======================================
 
   const showToast = (message) => {
-
     setToast(message);
 
     setTimeout(() => {
       setToast("");
     }, 2500);
-
   };
-
 
   // =======================================
   // FORMAT BACKEND CART
   // =======================================
 
-  const formatCart = (backendCart) => {
-
+  const formatCart = (
+    backendCart
+  ) => {
     if (
       !backendCart ||
       !backendCart.items
     ) {
-
       return [];
-
     }
 
-
     return backendCart.items
-
       .filter(
-        (item) => item.product
+        (item) =>
+          item.product
       )
-
       .map((item) => {
-
         const product =
           item.product;
 
-
         return {
-
           id: product._id,
 
-          name: product.name,
+          name:
+            product.name,
 
           category:
             product.category,
 
           skinTypes:
-            product.skinTypes || [],
+            product.skinTypes ||
+            [],
 
           price:
-            Number(product.price || 0),
+            Number(
+              product.price || 0
+            ),
 
           originalPrice:
             Number(
-              product.originalPrice || 0
+              product.originalPrice ||
+                0
             ),
+
           image:
             product.image
-              ? `http://localhost:5000${product.image}`
+              ? `${API_BASE_URL.replace(
+                  "/api",
+                  ""
+                )}${product.image}`
               : "",
 
           rating:
-            Number(product.rating || 0),
+            Number(
+              product.rating || 0
+            ),
 
           reviews:
-            Number(product.reviews || 0),
+            Number(
+              product.reviews || 0
+            ),
 
           description:
-            product.description || "",
+            product.description ||
+            "",
 
           stock:
-            Number(product.stock || 0),
+            Number(
+              product.stock || 0
+            ),
 
           quantity:
-            Number(item.quantity || 1),
-
+            Number(
+              item.quantity || 1
+            ),
         };
-
       });
-
   };
 
-
-  // =======================================
+  // =========================================
   // FETCH CART
-  // =======================================
+  // =========================================
 
-  const fetchCart = async () => {
+  const fetchCart =
+    async () => {
+      try {
+        setLoading(true);
 
-    try {
+        const {
+          token,
+          userId,
+        } = getAuthData();
 
-      setLoading(true);
+        // ===================================
+        // AUTH CHECK
+        // ===================================
 
+        if (
+          !token ||
+          !userId
+        ) {
+          setCart([]);
+          return;
+        }
 
-      const response =
-        await axios.get(
-          `${API_URL}/${USER_ID}`
+        // ===================================
+        // GET CART
+        // ===================================
+
+        const response =
+          await axios.get(
+            `${API_URL}/${userId}`,
+            {
+              headers:
+                getAuthHeaders(),
+            }
+          );
+
+        // ===================================
+        // FORMAT CART
+        // ===================================
+
+        const formattedCart =
+          formatCart(
+            response.data
+          );
+
+        setCart(
+          formattedCart
         );
-
-
-      const formattedCart =
-        formatCart(response.data);
-
-
-      setCart(formattedCart);
-
-
-    } catch (error) {
-
-      console.error(
-        "Fetch Cart Error:",
-        error
-      );
-
-    } finally {
-
-      setLoading(false);
-
-    }
-
-  };
-
-
-  // =======================================
-  // LOAD CART
-  // =======================================
-
-  useEffect(() => {
-
-    fetchCart();
-
-  }, []);
-
-
-  // =======================================
-  // ADD TO CART
-  // =======================================
-
-  const addToCart = async (product) => {
-
-    try {
-
-      const response =
-        await axios.post(
-          `${API_URL}/${USER_ID}`,
-          {
-
-            productId:
-              product.id,
-
-            quantity: 1,
-
-          }
-        );
-
-
-      const formattedCart =
-        formatCart(response.data);
-
-
-      setCart(formattedCart);
-
-
-      showToast(
-        "Product added to cart 🛍️"
-      );
-
-
-      return true;
-
-
-    } catch (error) {
-
-      if (
-        error.response?.status === 409
-      ) {
-
-        showToast(
-          "Product is already in your cart 🛒"
-        );
-
-      } else {
-
+      } catch (error) {
         console.error(
-          "Add To Cart Error:",
+          "Fetch Cart Error:",
           error
         );
 
-        showToast(
-          "Failed to add product"
+        // ===================================
+        // UNAUTHORIZED
+        // ===================================
+
+        if (
+          error.response?.status ===
+          401
+        ) {
+          console.warn(
+            "Cart authentication failed. Please login again."
+          );
+        }
+      } finally {
+        setLoading(false);
+      }
+    };
+
+  // =========================================
+  // LOAD CART
+  // =========================================
+
+  useEffect(() => {
+    // Initial cart synchronization
+    // with the backend.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    fetchCart();
+  }, []);
+
+  // =========================================
+  // ADD TO CART
+  // =========================================
+
+  const addToCart =
+    async (product) => {
+      try {
+        const {
+          token,
+          userId,
+        } = getAuthData();
+
+        // ===================================
+        // AUTH CHECK
+        // ===================================
+
+        if (
+          !token ||
+          !userId
+        ) {
+          showToast(
+            "Please login to add products to cart"
+          );
+
+          return false;
+        }
+
+        // ===================================
+        // ADD PRODUCT
+        // ===================================
+
+        const response =
+          await axios.post(
+            `${API_URL}/${userId}`,
+            {
+              productId:
+                product.id,
+
+              quantity: 1,
+            },
+            {
+              headers:
+                getAuthHeaders(),
+            }
+          );
+
+        // ===================================
+        // UPDATE CART
+        // ===================================
+
+        const formattedCart =
+          formatCart(
+            response.data
+          );
+
+        setCart(
+          formattedCart
         );
 
+        showToast(
+          "Product added to cart 🛍️"
+        );
+
+        return true;
+      } catch (error) {
+        if (
+          error.response?.status ===
+          401
+        ) {
+          showToast(
+            "Please login again"
+          );
+        } else if (
+          error.response?.status ===
+          409
+        ) {
+          showToast(
+            "Product is already in your cart 🛒"
+          );
+        } else {
+          console.error(
+            "Add To Cart Error:",
+            error
+          );
+
+          showToast(
+            "Failed to add product"
+          );
+        }
+
+        return false;
       }
+    };
 
-
-      return false;
-
-    }
-
-  };
-
-
-  // =======================================
+  // =========================================
   // INCREASE QUANTITY
-  // =======================================
+  // =========================================
 
   const increaseQuantity =
     async (productId) => {
-
       try {
+        const {
+          token,
+          userId,
+        } = getAuthData();
+
+        if (
+          !token ||
+          !userId
+        ) {
+          showToast(
+            "Please login first"
+          );
+
+          return;
+        }
 
         const product =
           cart.find(
@@ -293,52 +421,59 @@ export function CartProvider({ children }) {
               String(productId)
           );
 
-
         if (!product) {
           return;
         }
 
-
         const response =
           await axios.put(
-
-            `${API_URL}/${USER_ID}/${productId}`,
-
+            `${API_URL}/${userId}/${productId}`,
             {
-
               quantity:
-                product.quantity + 1,
-
+                product.quantity +
+                1,
+            },
+            {
+              headers:
+                getAuthHeaders(),
             }
-
           );
 
-
         setCart(
-          formatCart(response.data)
+          formatCart(
+            response.data
+          )
         );
-
-
       } catch (error) {
-
         console.error(
           "Increase Quantity Error:",
           error
         );
-
       }
-
     };
 
-
-  // =======================================
+  // =========================================
   // DECREASE QUANTITY
-  // =======================================
+  // =========================================
 
   const decreaseQuantity =
     async (productId) => {
-
       try {
+        const {
+          token,
+          userId,
+        } = getAuthData();
+
+        if (
+          !token ||
+          !userId
+        ) {
+          showToast(
+            "Please login first"
+          );
+
+          return;
+        }
 
         const product =
           cart.find(
@@ -347,396 +482,382 @@ export function CartProvider({ children }) {
               String(productId)
           );
 
-
         if (!product) {
           return;
         }
 
-
-        // =================================
+        // ===================================
         // REMOVE IF QUANTITY IS 1
-        // =================================
+        // ===================================
 
         if (
           product.quantity <= 1
         ) {
-
           await removeFromCart(
             productId
           );
 
           return;
-
         }
-
 
         const response =
           await axios.put(
-
-            `${API_URL}/${USER_ID}/${productId}`,
-
+            `${API_URL}/${userId}/${productId}`,
             {
-
               quantity:
-                product.quantity - 1,
-
+                product.quantity -
+                1,
+            },
+            {
+              headers:
+                getAuthHeaders(),
             }
-
           );
 
-
         setCart(
-          formatCart(response.data)
+          formatCart(
+            response.data
+          )
         );
-
-
       } catch (error) {
-
         console.error(
           "Decrease Quantity Error:",
           error
         );
-
       }
-
     };
 
-
-  // =======================================
+  // =========================================
   // REMOVE FROM CART
-  // =======================================
+  // =========================================
 
   const removeFromCart =
     async (productId) => {
-
       try {
+        const {
+          token,
+          userId,
+        } = getAuthData();
+
+        if (
+          !token ||
+          !userId
+        ) {
+          showToast(
+            "Please login first"
+          );
+
+          return;
+        }
 
         const response =
           await axios.delete(
-
-            `${API_URL}/${USER_ID}/${productId}`
-
+            `${API_URL}/${userId}/${productId}`,
+            {
+              headers:
+                getAuthHeaders(),
+            }
           );
 
-
         setCart(
-          formatCart(response.data)
+          formatCart(
+            response.data
+          )
         );
-
 
         showToast(
           "Product removed from cart"
         );
-
-
       } catch (error) {
-
         console.error(
           "Remove Cart Error:",
           error
         );
-
       }
-
     };
 
-
-  // =======================================
+  // =========================================
   // CLEAR CART
-  // =======================================
+  // =========================================
 
-  const clearCart = async () => {
+  const clearCart =
+    async () => {
+      try {
+        const {
+          token,
+          userId,
+        } = getAuthData();
 
-    try {
+        if (
+          !token ||
+          !userId
+        ) {
+          setCart([]);
+          return;
+        }
 
-      await axios.delete(
-        `${API_URL}/${USER_ID}`
-      );
+        await axios.delete(
+          `${API_URL}/${userId}`,
+          {
+            headers:
+              getAuthHeaders(),
+          }
+        );
 
+        setCart([]);
 
-      setCart([]);
+        setCoupon(null);
 
-      setCoupon(null);
+        setDiscount(0);
+      } catch (error) {
+        console.error(
+          "Clear Cart Error:",
+          error
+        );
+      }
+    };
 
-      setDiscount(0);
-
-
-    } catch (error) {
-
-      console.error(
-        "Clear Cart Error:",
-        error
-      );
-
-    }
-
-  };
-
-
-  // =======================================
+  // =========================================
   // CART COUNT
-  // =======================================
+  // =========================================
 
   const cartCount =
     cart.reduce(
-
       (total, item) =>
-
         total +
         Number(
           item.quantity || 0
         ),
-
       0
-
     );
 
-
-  // =======================================
+  // =========================================
   // CART TOTAL
-  // =======================================
+  // =========================================
 
   const cartTotal =
     cart.reduce(
-
       (total, item) =>
-
         total +
         Number(
           item.price || 0
         ) *
-        Number(
-          item.quantity || 0
-        ),
-
+          Number(
+            item.quantity || 0
+          ),
       0
-
     );
 
-
-  // =======================================
+  // =========================================
   // AVAILABLE COUPONS
-  // =======================================
+  // =========================================
 
   const availableCoupons = [
-
     {
       code: "GLOW10",
+
       title: "10% OFF",
+
       description:
         "Get 10% off on orders above ₹699",
+
       minimum: 699,
+
       type: "percentage",
+
       value: 10,
     },
 
     {
       code: "WELCOME100",
+
       title: "₹100 OFF",
+
       description:
         "First order above ₹999",
+
       minimum: 999,
+
       type: "fixed",
+
       value: 100,
     },
 
     {
       code: "SKIN15",
+
       title: "15% OFF",
+
       description:
         "Get 15% off on orders above ₹1,499",
+
       minimum: 1499,
+
       type: "percentage",
+
       value: 15,
     },
 
     {
       code: "GLOW20",
+
       title: "20% OFF",
+
       description:
         "Get 20% off on orders above ₹1,999",
+
       minimum: 1999,
+
       type: "percentage",
+
       value: 20,
     },
-
   ];
 
-
-  // =======================================
+  // =========================================
   // APPLY COUPON
-  // =======================================
+  // =========================================
 
-  const applyCoupon = (couponCode) => {
+  const applyCoupon =
+    (couponCode) => {
+      const code =
+        String(
+          couponCode || ""
+        )
+          .trim()
+          .toUpperCase();
 
-    const code =
-      String(couponCode || "")
-        .trim()
-        .toUpperCase();
-
-
-    if (!code) {
-
-      showToast(
-        "Please enter a coupon code 🎟️"
-      );
-
-      return false;
-
-    }
-
-
-    if (cart.length === 0) {
-
-      showToast(
-        "Add products before applying a coupon"
-      );
-
-      return false;
-
-    }
-
-
-    if (coupon === code) {
-
-      showToast(
-        "This coupon is already applied"
-      );
-
-      return false;
-
-    }
-
-
-    const selectedCoupon =
-      availableCoupons.find(
-        (item) =>
-          item.code === code
-      );
-
-
-    if (!selectedCoupon) {
-
-      showToast(
-        "Invalid or expired coupon code"
-      );
-
-      return false;
-
-    }
-
-
-    if (
-      cartTotal <
-      selectedCoupon.minimum
-    ) {
-
-      const remaining =
-        selectedCoupon.minimum -
-        cartTotal;
-
-
-      showToast(
-        `Add ₹${remaining} more. Minimum order is ₹${selectedCoupon.minimum}`
-      );
-
-      return false;
-
-    }
-
-
-    if (
-      selectedCoupon.code ===
-      "WELCOME100"
-    ) {
-
-      const existingOrders =
-        JSON.parse(
-          localStorage.getItem(
-            "glowryOrders"
-          )
-        ) || [];
-
-
-      if (
-        existingOrders.length > 0
-      ) {
-
+      if (!code) {
         showToast(
-          "WELCOME100 is for first orders only"
+          "Please enter a coupon code 🎟️"
         );
 
         return false;
-
       }
 
-    }
-
-
-    let discountAmount = 0;
-
-
-    if (
-      selectedCoupon.type ===
-      "percentage"
-    ) {
-
-      discountAmount =
-        Math.round(
-          cartTotal *
-          (
-            selectedCoupon.value /
-            100
-          )
+      if (
+        cart.length === 0
+      ) {
+        showToast(
+          "Add products before applying a coupon"
         );
 
-    } else {
+        return false;
+      }
 
-      discountAmount =
-        selectedCoupon.value;
+      if (
+        coupon === code
+      ) {
+        showToast(
+          "This coupon is already applied"
+        );
 
-    }
+        return false;
+      }
 
+      const selectedCoupon =
+        availableCoupons.find(
+          (item) =>
+            item.code === code
+        );
 
-    setCoupon(
-      selectedCoupon.code
-    );
+      if (!selectedCoupon) {
+        showToast(
+          "Invalid or expired coupon code"
+        );
 
-    setDiscount(
-      discountAmount
-    );
+        return false;
+      }
 
+      if (
+        cartTotal <
+        selectedCoupon.minimum
+      ) {
+        const remaining =
+          selectedCoupon.minimum -
+          cartTotal;
 
-    showToast(
-      `${selectedCoupon.code} applied 🎉`
-    );
+        showToast(
+          `Add ₹${remaining} more. Minimum order is ₹${selectedCoupon.minimum}`
+        );
 
+        return false;
+      }
 
-    return true;
+      // ===================================
+      // FIRST ORDER COUPON
+      // ===================================
 
-  };
+      if (
+        selectedCoupon.code ===
+        "WELCOME100"
+      ) {
+        const existingOrders =
+          JSON.parse(
+            localStorage.getItem(
+              "glowryOrders"
+            )
+          ) || [];
 
+        if (
+          existingOrders.length >
+          0
+        ) {
+          showToast(
+            "WELCOME100 is for first orders only"
+          );
 
-  // =======================================
+          return false;
+        }
+      }
+
+      // ===================================
+      // CALCULATE DISCOUNT
+      // ===================================
+
+      const discountAmount =
+        selectedCoupon.type ===
+        "percentage"
+          ? Math.round(
+              cartTotal *
+                (selectedCoupon.value /
+                  100)
+            )
+          : selectedCoupon.value;
+
+      setCoupon(
+        selectedCoupon.code
+      );
+
+      setDiscount(
+        discountAmount
+      );
+
+      showToast(
+        `${selectedCoupon.code} applied 🎉`
+      );
+
+      return true;
+    };
+
+  // =========================================
   // REMOVE COUPON
-  // =======================================
+  // =========================================
 
-  const removeCoupon = () => {
+  const removeCoupon =
+    () => {
+      setCoupon(null);
 
-    setCoupon(null);
+      setDiscount(0);
 
-    setDiscount(0);
+      showToast(
+        "Coupon removed"
+      );
+    };
 
-    showToast(
-      "Coupon removed"
-    );
-
-  };
-
-
-  // =======================================
+  // =========================================
   // FINAL TOTAL
-  // =======================================
+  // =========================================
 
   const finalTotal =
     Math.max(
@@ -744,16 +865,13 @@ export function CartProvider({ children }) {
       cartTotal - discount
     );
 
-
-  // =======================================
+  // =========================================
   // PROVIDER
-  // =======================================
+  // =========================================
 
   return (
-
     <CartContext.Provider
       value={{
-
         cart,
 
         loading,
@@ -785,27 +903,19 @@ export function CartProvider({ children }) {
         applyCoupon,
 
         removeCoupon,
-
       }}
     >
-
       {children}
-
     </CartContext.Provider>
-
   );
-
 }
-
 
 // =========================================
 // CUSTOM HOOK
 // =========================================
 
 export function useCart() {
-
   return useContext(
     CartContext
   );
-
 }

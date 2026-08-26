@@ -1,61 +1,153 @@
-import { Link, useNavigate, useLocation } from "react-router-dom";
-import { useCart } from "../context/CartContext";
-import { useEffect, useState } from "react";
+import {
+  Link,
+  useNavigate,
+  useLocation,
+} from "react-router-dom";
+
+import {
+  useEffect,
+  useState,
+} from "react";
+
+import {
+  useCart,
+} from "../context/CartContext";
 
 
 function Navbar() {
-
 
   const {
     cartCount,
   } = useCart();
 
 
-  const navigate = useNavigate();
+  const navigate =
+    useNavigate();
 
-  const location = useLocation();
+  const location =
+    useLocation();
 
 
+  // =========================================
+  // GET USER FROM LOCAL STORAGE
+  // =========================================
 
   const [user, setUser] =
-    useState(null);
+    useState(() => {
+
+      try {
+
+        const savedUser =
+          localStorage.getItem(
+            "glowryLoggedInUser"
+          );
+
+        if (!savedUser) {
+          return null;
+        }
+
+        return JSON.parse(savedUser);
+
+      } catch (error) {
+
+        console.error(
+          "User Parse Error:",
+          error
+        );
+
+        return null;
+
+      }
+
+    });
 
 
+  // =========================================
+  // LOAD / UPDATE USER
+  // =========================================
+
+  useEffect(() => {
+
+    const loadUser = () => {
+
+      try {
+
+        const savedUser =
+          localStorage.getItem(
+            "glowryLoggedInUser"
+          );
 
 
-  useEffect(()=>{
+        if (!savedUser) {
+
+          setUser(null);
+
+          return;
+
+        }
 
 
-    const savedUser =
-      localStorage.getItem(
-        "glowryLoggedInUser"
+        const parsedUser =
+          JSON.parse(savedUser);
+
+
+        setUser(parsedUser);
+
+      } catch (error) {
+
+        console.error(
+          "Navbar User Load Error:",
+          error
+        );
+
+        setUser(null);
+
+      }
+
+    };
+
+
+    // Load user initially
+    loadUser();
+
+
+    // Listen for login/user update
+    window.addEventListener(
+      "glowryUserUpdated",
+      loadUser
+    );
+
+
+    // Listen for localStorage changes
+    window.addEventListener(
+      "storage",
+      loadUser
+    );
+
+
+    return () => {
+
+      window.removeEventListener(
+        "glowryUserUpdated",
+        loadUser
       );
 
 
-    if(savedUser){
-
-      setUser(
-        JSON.parse(savedUser)
+      window.removeEventListener(
+        "storage",
+        loadUser
       );
 
-    }
-    else{
+    };
 
-      setUser(null);
-
-    }
+  }, []);
 
 
-  }, [location]);
+  // =========================================
+  // LOGOUT
+  // =========================================
 
-
-
-
-
-
-
-  const handleLogout = ()=>{
-
+  const handleLogout = () => {
 
     const confirmLogout =
       window.confirm(
@@ -63,283 +155,283 @@ function Navbar() {
       );
 
 
-    if(confirmLogout){
-
-
-      localStorage.removeItem(
-        "glowryLoggedInUser"
-      );
-
-
-      setUser(null);
-
-
-      navigate("/login");
-
-
+    if (!confirmLogout) {
+      return;
     }
 
+
+    // Remove user data
+    localStorage.removeItem(
+      "glowryLoggedInUser"
+    );
+
+
+    localStorage.removeItem(
+      "glowryToken"
+    );
+
+
+    // Update Navbar immediately
+    setUser(null);
+
+
+    // Notify other components
+    window.dispatchEvent(
+      new Event("glowryUserUpdated")
+    );
+
+
+    // Go to login
+    navigate("/login");
 
   };
 
 
+  // =========================================
+  // HIDE NAVBAR ON AUTH PAGES
+  // =========================================
 
-
-
-
-  // LOGIN PAGE PAR NAVBAR HIDE
-
-  if(
+  if (
     location.pathname === "/login" ||
     location.pathname === "/register"
-  ){
+  ) {
 
     return null;
 
   }
 
 
-
-
-
+  // =========================================
+  // NAVBAR
+  // =========================================
 
   return (
 
+    <header className="navbar">
 
-<header className="navbar">
+      <div className="navbar-container">
 
 
-<div className="navbar-container">
+        {/* ===================================
+            LOGO
+        =================================== */}
 
+        <Link
+          to="/"
+          className="logo"
+        >
+          GLOWRY
+        </Link>
 
 
-<Link
-to="/"
-className="logo"
->
-GLOWRY
-</Link>
+        {/* ===================================
+            NAV LINKS
+        =================================== */}
 
+        <nav className="nav-links">
 
+          <Link to="/">
+            Home
+          </Link>
 
 
+          <Link to="/products">
+            Shop
+          </Link>
 
-<nav className="nav-links">
 
-<Link to="/">
-Home
-</Link>
+          <Link to="/about">
+            About
+          </Link>
 
 
-<Link to="/products">
-Shop
-</Link>
+          <Link to="/contact">
+            Contact
+          </Link>
 
+        </nav>
 
-<Link to="/about">
-About
-</Link>
 
+        {/* ===================================
+            NAV ACTIONS
+        =================================== */}
 
-<Link to="/contact">
-Contact
-</Link>
+        <div className="nav-actions">
 
 
-</nav>
+          {/* =================================
+              WISHLIST
+          ================================= */}
 
+          <Link
+            to="/wishlist"
+            className="nav-icon"
+          >
+            ♡
+          </Link>
 
 
+          {/* =================================
+              ACCOUNT
+          ================================= */}
 
+          <div className="account-menu">
 
+            <button
+              type="button"
+              className="account-button"
+            >
 
-<div className="nav-actions">
+              <span>
+                ♙
+              </span>
 
 
+              <span>
 
+                {
+                  user
+                    ? (
+                        user.fullName ||
+                        user.name ||
+                        "Account"
+                      )
+                    : "Account"
+                }
 
+              </span>
 
-<Link
-to="/wishlist"
-className="nav-icon"
->
 
-♡
+              <span>
+                ⌄
+              </span>
 
+            </button>
 
-</Link>
 
+            {/* ================================
+                ACCOUNT DROPDOWN
+            ================================= */}
 
+            <div className="account-dropdown">
 
+              {
+                user
 
+                  ? (
 
+                    <>
 
+                      <Link to="/dashboard">
+                        My Dashboard
+                      </Link>
 
 
-<div className="account-menu">
+                      <Link to="/dashboard/orders">
+                        My Orders
+                      </Link>
 
 
-<button className="account-button">
+                      <Link to="/wishlist">
+                        Wishlist
+                      </Link>
 
 
-<span>
-♙
-</span>
+                      <Link to="/dashboard/addresses">
+                        My Addresses
+                      </Link>
 
 
-<span>
+                      <Link to="/dashboard/settings">
+                        Settings
+                      </Link>
 
-{
-user
-?
-user.fullName
-:
-"Account"
-}
 
-</span>
+                      {/* ======================
+                          LOGOUT
+                      ======================= */}
 
+                      <button
+                        type="button"
+                        className="logout-dropdown"
+                        onClick={
+                          handleLogout
+                        }
+                      >
 
-<span>
-⌄
-</span>
+                        <span className="logout-symbol">
+                          ↪
+                        </span>
 
 
-</button>
+                        <span>
+                          Logout
+                        </span>
 
+                      </button>
 
+                    </>
 
+                  )
 
+                  : (
 
+                    <>
 
-<div className="account-dropdown">
+                      <Link to="/login">
+                        Login
+                      </Link>
 
 
+                      <Link to="/register">
+                        Register
+                      </Link>
 
-{
-user
+                    </>
 
-?
+                  )
 
-<>
+              }
 
+            </div>
 
-<Link to="/dashboard">
-My Dashboard
-</Link>
+          </div>
 
 
-<Link to="/dashboard/orders">
-My Orders
-</Link>
+          {/* =================================
+              CART
+          ================================= */}
 
+          <Link
+            to="/cart"
+            className="cart-button"
+          >
 
-<Link to="/wishlist">
-Wishlist
-</Link>
+            <span>
+              🛒
+            </span>
 
 
-<Link to="/dashboard/addresses">
-My Addresses
-</Link>
+            {
+              user && (
 
+                <span className="cart-count">
 
-<Link to="/dashboard/settings">
-Settings
-</Link>
+                  {cartCount}
 
+                </span>
 
-<button
+              )
+            }
 
-  className="logout-dropdown"
+          </Link>
 
-  onClick={handleLogout}
 
->
+        </div>
 
-  <span className="logout-symbol">
-    ↪
-  </span>
+      </div>
 
-  <span>
-    Logout
-  </span>
-
-</button>
-
-
-</>
-
-
-:
-
-<>
-
-<Link to="/login">
-Login
-</Link>
-
-
-<Link to="/register">
-Register
-</Link>
-
-
-</>
-
-
-}
-
-
-
-</div>
-
-
-</div>
-
-
-
-<Link
-to="/cart"
-className="cart-button"
->
-
-
-<span>
-🛒
-</span>
-
-
-
-{
-user && (
-
-<span className="cart-count">
-
-{cartCount}
-
-</span>
-
-)
-}
-
-
-
-</Link>
-
-
-
-
-
-</div>
-
-
-
-</div>
-
-
-</header>
-
+    </header>
 
   );
 

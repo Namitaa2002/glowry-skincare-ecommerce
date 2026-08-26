@@ -1,4 +1,3 @@
-
 import { useEffect, useState } from "react";
 import axios from "axios";
 import { Link } from "react-router-dom";
@@ -7,6 +6,10 @@ import RoutineStep from "../components/RoutineStep";
 import ProductCard from "../components/ProductCard";
 import SkinMatch from "../components/SkinMatch";
 
+import {
+  API_BASE_URL,
+  SERVER_BASE_URL,
+} from "../config/api";
 
 // =========================================
 // HOME PAGE
@@ -19,7 +22,6 @@ function Home() {
   // =========================================
 
   const routineSteps = [
-
     {
       number: "01",
       step: "STEP ONE",
@@ -79,7 +81,6 @@ function Home() {
       category: "face-masks",
       side: "right",
     },
-
   ];
 
 
@@ -108,7 +109,7 @@ function Home() {
 
         const response =
           await axios.get(
-            "http://localhost:5000/api/products"
+            `${API_BASE_URL}/products`
           );
 
         const products =
@@ -158,10 +159,10 @@ function Home() {
     }
 
     if (image.startsWith("/")) {
-      return `http://localhost:5000${image}`;
+      return `${SERVER_BASE_URL}${image}`;
     }
 
-    return `http://localhost:5000/images/${image}`;
+    return `${SERVER_BASE_URL}/images/${image}`;
 
   };
 
@@ -184,8 +185,11 @@ function Home() {
         <div className="home-hero-content">
 
           <div className="home-hero-badge">
+
             <span></span>
+
             EVERYDAY SKINCARE, SIMPLIFIED
+
           </div>
 
 
@@ -217,7 +221,11 @@ function Home() {
               className="home-primary-button"
             >
               Explore Skincare
-              <span>→</span>
+
+              <span>
+                →
+              </span>
+
             </Link>
 
 
@@ -233,7 +241,9 @@ function Home() {
 
           <div className="home-hero-note">
 
-            <span>✦</span>
+            <span>
+              ✦
+            </span>
 
             Simple ingredients. Thoughtful formulas.
             Everyday glow.
@@ -247,10 +257,11 @@ function Home() {
 
           <div className="hero-glow-circle"></div>
 
+
           <div className="hero-image-frame">
 
             <img
-              src="http://localhost:5000/images/hero-skincare.jpg"
+              src={`${SERVER_BASE_URL}/images/hero-skincare.jpg`}
               alt="GLOWRY skincare collection"
               className="hero-main-image"
             />
@@ -265,6 +276,7 @@ function Home() {
             </span>
 
             <div>
+
               <strong>
                 Skin First
               </strong>
@@ -272,6 +284,7 @@ function Home() {
               <small>
                 Always.
               </small>
+
             </div>
 
           </div>
@@ -284,6 +297,7 @@ function Home() {
             </strong>
 
             <div>
+
               <small>
                 Simple steps
               </small>
@@ -291,6 +305,7 @@ function Home() {
               <span>
                 to your glow
               </span>
+
             </div>
 
           </div>
@@ -314,6 +329,7 @@ function Home() {
           </span>
 
           <div>
+
             <strong>
               Thoughtfully Selected
             </strong>
@@ -321,6 +337,7 @@ function Home() {
             <small>
               Everyday essentials
             </small>
+
           </div>
 
         </div>
@@ -336,6 +353,7 @@ function Home() {
           </span>
 
           <div>
+
             <strong>
               Made For Your Routine
             </strong>
@@ -343,6 +361,7 @@ function Home() {
             <small>
               Simple & consistent
             </small>
+
           </div>
 
         </div>
@@ -358,6 +377,7 @@ function Home() {
           </span>
 
           <div>
+
             <strong>
               Your Skin, Your Way
             </strong>
@@ -365,6 +385,7 @@ function Home() {
             <small>
               Find what works for you
             </small>
+
           </div>
 
         </div>
@@ -391,12 +412,14 @@ function Home() {
             </p>
 
             <h2>
+
               What Does Your
               <br />
 
               <span>
                 Skin Need Today?
               </span>
+
             </h2>
 
           </div>
@@ -463,16 +486,20 @@ function Home() {
 
 
             <h3>
+
               Let's find what
               <br />
               your skin needs.
+
             </h3>
 
 
             <p>
+
               Answer a few simple questions
               and explore products that fit
               your skin concerns.
+
             </p>
 
 
@@ -505,8 +532,10 @@ function Home() {
 
 
           <p>
+
             Six simple steps. Thoughtfully designed
             for your everyday skincare ritual.
+
           </p>
 
         </div>
@@ -517,21 +546,13 @@ function Home() {
           {routineSteps.map((item) => (
 
             <RoutineStep
-
               key={item.number}
-
               number={item.number}
-
               step={item.step}
-
               name={item.name}
-
               description={item.description}
-
               category={item.category}
-
               side={item.side}
-
             />
 
           ))}
@@ -574,8 +595,10 @@ function Home() {
 
 
           <p>
+
             Skincare essentials selected to help
             you build your perfect routine.
+
           </p>
 
         </div>
@@ -599,37 +622,15 @@ function Home() {
               (product) => (
 
                 <ProductCard
-
                   key={product._id}
-
                   id={product._id}
-
                   name={product.name}
-
-                  image={
-                    getImageUrl(
-                      product.image
-                    )
-                  }
-
+                  image={getImageUrl(product.image)}
                   price={product.price}
-
-                  originalPrice={
-                    product.originalPrice
-                  }
-
-                  rating={
-                    product.rating
-                  }
-
-                  reviews={
-                    product.reviews
-                  }
-
-                  category={
-                    product.category
-                  }
-
+                  originalPrice={product.originalPrice}
+                  rating={product.rating}
+                  reviews={product.reviews}
+                  category={product.category}
                 />
 
               )
@@ -661,8 +662,13 @@ function Home() {
             to="/products"
             className="view-all-products-button"
           >
+
             View All Products
-            <span>→</span>
+
+            <span>
+              →
+            </span>
+
           </Link>
 
         </div>
@@ -685,19 +691,23 @@ function Home() {
 
 
           <h2>
+
             Good skin doesn't
             <br />
 
             <em>
               need to be complicated.
             </em>
+
           </h2>
 
 
           <p>
+
             Take a moment. Build a routine
             that feels good. Stay consistent.
             Let your glow follow.
+
           </p>
 
 
@@ -705,8 +715,13 @@ function Home() {
             to="/products"
             className="brand-shop-button"
           >
+
             Start Your Routine
-            <span>→</span>
+
+            <span>
+              →
+            </span>
+
           </Link>
 
         </div>
@@ -743,4 +758,3 @@ function Home() {
 
 
 export default Home;
-

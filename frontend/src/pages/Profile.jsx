@@ -1,6 +1,16 @@
-import { useEffect, useState } from "react";
+
+import {
+  useCallback,
+  useEffect,
+  useState,
+} from "react";
+
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
+
+import {
+  API_BASE_URL,
+} from "../config/api";
 
 
 function Profile() {
@@ -13,17 +23,11 @@ function Profile() {
   // =========================================
 
   const [user, setUser] = useState({
-
     id: "",
-
     fullName: "",
-
     email: "",
-
     phone: "",
-
     createdAt: "",
-
   });
 
 
@@ -42,6 +46,170 @@ function Profile() {
 
 
   // =========================================
+  // FETCH PROFILE
+  // =========================================
+
+  const fetchProfile = useCallback(
+    async (userId) => {
+
+      try {
+
+        const token =
+          localStorage.getItem(
+            "glowryToken"
+          );
+
+
+        // =====================================
+        // CHECK TOKEN
+        // =====================================
+
+        if (!token) {
+
+          navigate("/login");
+
+          return;
+
+        }
+
+
+        // =====================================
+        // GET PROFILE
+        // =====================================
+
+        const response =
+          await axios.get(
+
+            `${API_BASE_URL}/auth/profile/${userId}`,
+
+            {
+              headers: {
+                Authorization:
+                  `Bearer ${token}`,
+              },
+            }
+
+          );
+
+
+        const profileUser =
+          response.data?.user;
+
+
+        if (!profileUser) {
+
+          throw new Error(
+            "User profile was not received."
+          );
+
+        }
+
+
+        // =====================================
+        // UPDATE PROFILE STATE
+        // =====================================
+
+        setUser({
+
+          id:
+            profileUser.id ||
+            profileUser._id ||
+            userId,
+
+          fullName:
+            profileUser.fullName ||
+            profileUser.name ||
+            "",
+
+          email:
+            profileUser.email ||
+            "",
+
+          phone:
+            profileUser.phone ||
+            "",
+
+          createdAt:
+            profileUser.createdAt ||
+            "",
+
+        });
+
+
+      } catch (error) {
+
+        console.error(
+          "Profile Fetch Error:",
+          error
+        );
+
+
+        // =====================================
+        // UNAUTHORIZED
+        // =====================================
+
+        if (
+          error.response?.status === 401 ||
+          error.response?.status === 403
+        ) {
+
+          localStorage.removeItem(
+            "glowryToken"
+          );
+
+          localStorage.removeItem(
+            "glowryLoggedInUser"
+          );
+
+          navigate("/login");
+
+          return;
+
+        }
+
+
+        // =====================================
+        // USER NOT FOUND
+        // =====================================
+
+        if (
+          error.response?.status === 404
+        ) {
+
+          alert(
+            "User account not found."
+          );
+
+          navigate("/login");
+
+          return;
+
+        }
+
+
+        // =====================================
+        // OTHER ERROR
+        // =====================================
+
+        alert(
+          error.response?.data?.message ||
+          "Failed to load profile."
+        );
+
+
+      } finally {
+
+        setLoading(false);
+
+      }
+
+    },
+
+    [navigate]
+  );
+
+
+  // =========================================
   // LOAD PROFILE
   // =========================================
 
@@ -53,7 +221,17 @@ function Profile() {
       );
 
 
-    if (!savedUser) {
+    const token =
+      localStorage.getItem(
+        "glowryToken"
+      );
+
+
+    // =======================================
+    // CHECK LOGIN
+    // =======================================
+
+    if (!savedUser || !token) {
 
       navigate("/login");
 
@@ -68,7 +246,12 @@ function Profile() {
         JSON.parse(savedUser);
 
 
-      if (!loggedInUser.id) {
+      const userId =
+        loggedInUser.id ||
+        loggedInUser._id;
+
+
+      if (!userId) {
 
         console.error(
           "User ID missing from localStorage."
@@ -81,9 +264,11 @@ function Profile() {
       }
 
 
-      fetchProfile(
-        loggedInUser.id
-      );
+      // =====================================
+      // FETCH REAL PROFILE FROM DATABASE
+      // =====================================
+
+      fetchProfile(userId);
 
 
     } catch (error) {
@@ -93,87 +278,24 @@ function Profile() {
         error
       );
 
+
       localStorage.removeItem(
         "glowryLoggedInUser"
       );
+
+      localStorage.removeItem(
+        "glowryToken"
+      );
+
 
       navigate("/login");
 
     }
 
-  }, [navigate]);
-
-
-  // =========================================
-  // FETCH PROFILE
-  // =========================================
-
-  const fetchProfile = async (userId) => {
-
-    try {
-
-      const response =
-        await axios.get(
-          `http://localhost:5000/api/auth/profile/${userId}`
-        );
-
-
-      const profileUser =
-        response.data.user;
-
-
-      setUser({
-
-        id:
-          profileUser.id,
-
-        fullName:
-          profileUser.fullName ||
-          profileUser.name ||
-          "",
-
-        email:
-          profileUser.email ||
-          "",
-
-        phone:
-          profileUser.phone ||
-          "",
-
-        createdAt:
-          profileUser.createdAt ||
-          "",
-
-      });
-
-
-    } catch (error) {
-
-      console.error(
-        "Profile Fetch Error:",
-        error
-      );
-
-
-      if (
-        error.response?.status === 404
-      ) {
-
-        alert(
-          "User account not found."
-        );
-
-        navigate("/login");
-
-      }
-
-    } finally {
-
-      setLoading(false);
-
-    }
-
-  };
+  }, [
+    navigate,
+    fetchProfile,
+  ]);
 
 
   // =========================================
@@ -210,21 +332,77 @@ function Profile() {
       setSaving(true);
 
 
+      const token =
+        localStorage.getItem(
+          "glowryToken"
+        );
+
+
+      // =====================================
+      // CHECK TOKEN
+      // =====================================
+
+      if (!token) {
+
+        alert(
+          "Your session has expired. Please login again."
+        );
+
+        navigate("/login");
+
+        return;
+
+      }
+
+
+      // =====================================
+      // VALIDATION
+      // =====================================
+
+      if (
+        !user.fullName.trim() ||
+        !user.email.trim()
+      ) {
+
+        alert(
+          "Name and email are required."
+        );
+
+        return;
+
+      }
+
+
+      // =====================================
+      // UPDATE PROFILE
+      // =====================================
+
       const response =
         await axios.put(
 
-          `http://localhost:5000/api/auth/profile/${user.id}`,
+          `${API_BASE_URL}/auth/profile/${user.id}`,
 
           {
 
             fullName:
-              user.fullName,
+              user.fullName.trim(),
 
             email:
-              user.email,
+              user.email.trim().toLowerCase(),
 
             phone:
-              user.phone,
+              user.phone.trim(),
+
+          },
+
+          {
+
+            headers: {
+
+              Authorization:
+                `Bearer ${token}`,
+
+            },
 
           }
 
@@ -232,33 +410,60 @@ function Profile() {
 
 
       const updatedUser =
-        response.data.user;
+        response.data?.user;
 
+
+      if (!updatedUser) {
+
+        throw new Error(
+          "Updated user information was not received."
+        );
+
+      }
+
+
+      // =====================================
+      // UPDATED USER OBJECT
+      // =====================================
 
       const loggedInUser = {
 
         id:
-          updatedUser.id,
+          updatedUser.id ||
+          updatedUser._id,
 
         fullName:
-          updatedUser.fullName,
+          updatedUser.fullName ||
+          updatedUser.name ||
+          "",
+
+        name:
+          updatedUser.name ||
+          updatedUser.fullName ||
+          "",
 
         email:
-          updatedUser.email,
+          updatedUser.email ||
+          "",
 
         phone:
-          updatedUser.phone,
+          updatedUser.phone ||
+          "",
 
         role:
-          updatedUser.role,
+          updatedUser.role ||
+          "user",
 
         createdAt:
-          updatedUser.createdAt,
+          updatedUser.createdAt ||
+          "",
 
       };
 
 
-      // Update localStorage
+      // =====================================
+      // UPDATE LOCAL STORAGE
+      // =====================================
 
       localStorage.setItem(
 
@@ -271,26 +476,39 @@ function Profile() {
       );
 
 
-      // Update state
+      // =====================================
+      // UPDATE PROFILE STATE
+      // =====================================
 
       setUser({
 
         id:
-          updatedUser.id,
+          loggedInUser.id,
 
         fullName:
-          updatedUser.fullName,
+          loggedInUser.fullName,
 
         email:
-          updatedUser.email,
+          loggedInUser.email,
 
         phone:
-          updatedUser.phone,
+          loggedInUser.phone,
 
         createdAt:
-          updatedUser.createdAt,
+          loggedInUser.createdAt,
 
       });
+
+
+      // =====================================
+      // NOTIFY NAVBAR
+      // =====================================
+
+      window.dispatchEvent(
+        new Event(
+          "glowryUserUpdated"
+        )
+      );
 
 
       setEditMode(false);
@@ -309,6 +527,34 @@ function Profile() {
       );
 
 
+      // =====================================
+      // AUTH ERROR
+      // =====================================
+
+      if (
+        error.response?.status === 401 ||
+        error.response?.status === 403
+      ) {
+
+        localStorage.removeItem(
+          "glowryToken"
+        );
+
+        localStorage.removeItem(
+          "glowryLoggedInUser"
+        );
+
+        navigate("/login");
+
+        return;
+
+      }
+
+
+      // =====================================
+      // ERROR MESSAGE
+      // =====================================
+
       alert(
 
         error.response?.data?.message ||
@@ -316,6 +562,7 @@ function Profile() {
         "Failed to update profile."
 
       );
+
 
     } finally {
 
@@ -349,6 +596,21 @@ function Profile() {
       "glowryLoggedInUser"
     );
 
+    localStorage.removeItem(
+      "glowryToken"
+    );
+
+
+    // =====================================
+    // NOTIFY NAVBAR
+    // =====================================
+
+    window.dispatchEvent(
+      new Event(
+        "glowryUserUpdated"
+      )
+    );
+
 
     navigate("/login");
 
@@ -361,11 +623,11 @@ function Profile() {
 
   const handlePassword = () => {
 
-  navigate(
-    "/dashboard/change-password"
-  );
+    navigate(
+      "/dashboard/change-password"
+    );
 
-};
+  };
 
 
   // =========================================
@@ -423,7 +685,7 @@ function Profile() {
 
       {/* =====================================
           HEADER
-      ===================================== */}
+      ====================================== */}
 
       <section className="profile-header">
 
@@ -431,11 +693,9 @@ function Profile() {
           MY GLOWRY
         </p>
 
-
         <h1>
           My Profile
         </h1>
-
 
         <p>
           Manage your account details and
@@ -447,22 +707,20 @@ function Profile() {
 
       {/* =====================================
           PROFILE CONTAINER
-      ===================================== */}
+      ====================================== */}
 
       <section className="profile-container">
 
 
         {/* ===================================
             PROFILE TOP
-        =================================== */}
+        ==================================== */}
 
         <div className="profile-top">
-
 
           <div className="profile-avatar-large">
 
             {
-
               user.fullName
 
                 ?
@@ -474,7 +732,6 @@ function Profile() {
                 :
 
                 "U"
-
             }
 
           </div>
@@ -512,11 +769,8 @@ function Profile() {
 
 
           <button
-
             type="button"
-
             className="profile-edit-button"
-
             onClick={() => {
 
               if (editMode) {
@@ -530,13 +784,10 @@ function Profile() {
               }
 
             }}
-
             disabled={saving}
-
           >
 
             {
-
               saving
 
                 ?
@@ -545,30 +796,27 @@ function Profile() {
 
                 :
 
-              editMode
+                editMode
 
-                ?
+                  ?
 
-                "Save Profile"
+                  "Save Profile"
 
-                :
+                  :
 
-                "✏️ Edit Profile"
-
+                  "✏️ Edit Profile"
             }
 
           </button>
-
 
         </div>
 
 
         {/* ===================================
             PERSONAL INFORMATION
-        =================================== */}
+        ==================================== */}
 
         <div className="profile-section">
-
 
           <h3>
             Personal Information
@@ -595,27 +843,20 @@ function Profile() {
 
 
                 {
-
                   editMode
 
                     ?
 
                     <input
-
                       type="text"
-
                       name="fullName"
-
                       value={
                         user.fullName
                       }
-
                       onChange={
                         handleChange
                       }
-
                       placeholder="Enter your full name"
-
                     />
 
                     :
@@ -628,7 +869,6 @@ function Profile() {
                       }
 
                     </strong>
-
                 }
 
               </div>
@@ -653,27 +893,20 @@ function Profile() {
 
 
                 {
-
                   editMode
 
                     ?
 
                     <input
-
                       type="email"
-
                       name="email"
-
                       value={
                         user.email
                       }
-
                       onChange={
                         handleChange
                       }
-
                       placeholder="Enter your email"
-
                     />
 
                     :
@@ -686,7 +919,6 @@ function Profile() {
                       }
 
                     </strong>
-
                 }
 
               </div>
@@ -711,27 +943,20 @@ function Profile() {
 
 
                 {
-
                   editMode
 
                     ?
 
                     <input
-
                       type="tel"
-
                       name="phone"
-
                       value={
                         user.phone
                       }
-
                       onChange={
                         handleChange
                       }
-
                       placeholder="Enter phone number"
-
                     />
 
                     :
@@ -744,7 +969,6 @@ function Profile() {
                       }
 
                     </strong>
-
                 }
 
               </div>
@@ -767,7 +991,6 @@ function Profile() {
                   Member Since
                 </span>
 
-
                 <strong>
                   {memberSince}
                 </strong>
@@ -784,10 +1007,9 @@ function Profile() {
 
         {/* ===================================
             SECURITY
-        =================================== */}
+        ==================================== */}
 
         <div className="profile-section">
-
 
           <h3>
             Account Security
@@ -797,7 +1019,6 @@ function Profile() {
           {/* CHANGE PASSWORD */}
 
           <div className="profile-action">
-
 
             <div className="profile-action-left">
 
@@ -812,7 +1033,6 @@ function Profile() {
                   Password
                 </strong>
 
-
                 <span>
                   Keep your account secure
                 </span>
@@ -823,19 +1043,13 @@ function Profile() {
 
 
             <button
-
               type="button"
-
               onClick={
                 handlePassword
               }
-
             >
-
               Change Password
-
             </button>
-
 
           </div>
 
@@ -843,7 +1057,6 @@ function Profile() {
           {/* LOGOUT */}
 
           <div className="profile-action">
-
 
             <div className="profile-action-left">
 
@@ -858,7 +1071,6 @@ function Profile() {
                   Logout
                 </strong>
 
-
                 <span>
                   Sign out from this device
                 </span>
@@ -869,19 +1081,13 @@ function Profile() {
 
 
             <button
-
               type="button"
-
               onClick={
                 handleLogout
               }
-
             >
-
               Logout
-
             </button>
-
 
           </div>
 
@@ -891,6 +1097,7 @@ function Profile() {
 
       </section>
 
+
     </main>
 
   );
@@ -899,3 +1106,4 @@ function Profile() {
 
 
 export default Profile;
+

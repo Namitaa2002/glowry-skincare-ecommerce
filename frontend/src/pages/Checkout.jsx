@@ -1,9 +1,11 @@
+
 import {
   Link,
   useNavigate,
 } from "react-router-dom";
 
 import {
+  useCallback,
   useEffect,
   useState,
 } from "react";
@@ -14,20 +16,24 @@ import {
   useCart,
 } from "../context/CartContext";
 
+import {
+  API_BASE_URL,
+} from "../config/api";
+
 
 function Checkout() {
 
-  const navigate =
-    useNavigate();
+  const navigate = useNavigate();
 
+
+  // =========================================
+  // CART
+  // =========================================
 
   const {
     cart,
-    cartTotal,
     coupon,
     discount,
-    finalTotal,
-    clearCart,
   } = useCart();
 
 
@@ -37,8 +43,94 @@ function Checkout() {
 
   const [
     loggedInUser,
-    setLoggedInUser,
-  ] = useState(null);
+  ] = useState(() => {
+
+    try {
+
+      const savedUser =
+        localStorage.getItem(
+          "glowryLoggedInUser"
+        );
+
+      const token =
+        localStorage.getItem(
+          "glowryToken"
+        );
+
+      if (!savedUser || !token) {
+        return null;
+      }
+
+      const user =
+        JSON.parse(savedUser);
+
+      if (!user?.id) {
+        return null;
+      }
+
+      return user;
+
+    } catch (error) {
+
+      console.error(
+        "User Parse Error:",
+        error
+      );
+
+      return null;
+    }
+  });
+
+
+  // =========================================
+  // CALCULATE ORDER TOTALS
+  // =========================================
+  // IMPORTANT:
+  // Do not depend on cartTotal/finalTotal
+  // from context for checkout display.
+  // Calculate directly from cart.
+
+  const calculatedSubtotal =
+    Array.isArray(cart)
+      ? cart.reduce(
+          (total, product) => {
+
+            const price =
+              Number(
+                product?.price || 0
+              );
+
+            const quantity =
+              Number(
+                product?.quantity || 1
+              );
+
+            return (
+              total +
+              price * quantity
+            );
+
+          },
+          0
+        )
+      : 0;
+
+
+  const calculatedDiscount = Math.min(
+    Math.max(
+      Number(discount || 0),
+      0
+    ),
+    calculatedSubtotal
+  );
+
+
+  const calculatedFinalTotal =
+    Math.max(
+      0,
+      calculatedSubtotal -
+        calculatedDiscount
+    );
 
 
   // =========================================
@@ -70,16 +162,71 @@ function Checkout() {
   const [
     formData,
     setFormData,
-  ] = useState({
+  ] = useState(() => {
 
-    fullName: "",
-    phone: "",
-    email: "",
-    address: "",
-    city: "",
-    state: "",
-    pincode: "",
+    try {
 
+      const savedUser =
+        localStorage.getItem(
+          "glowryLoggedInUser"
+        );
+
+      if (!savedUser) {
+
+        return {
+          fullName: "",
+          phone: "",
+          email: "",
+          address: "",
+          city: "",
+          state: "",
+          pincode: "",
+        };
+      }
+
+
+      const user =
+        JSON.parse(savedUser);
+
+
+      return {
+
+        fullName:
+          user.fullName ||
+          user.name ||
+          "",
+
+        phone:
+          user.phone ||
+          "",
+
+        email:
+          user.email ||
+          "",
+
+        address: "",
+        city: "",
+        state: "",
+        pincode: "",
+      };
+
+    } catch (error) {
+
+      console.error(
+        "Form User Parse Error:",
+        error
+      );
+
+      return {
+        fullName: "",
+        phone: "",
+        email: "",
+        address: "",
+        city: "",
+        state: "",
+        pincode: "",
+      };
+    }
   });
 
 
@@ -110,103 +257,76 @@ function Checkout() {
 
 
   // =========================================
-  // GET LOGGED IN USER
+  // LOGIN CHECK
   // =========================================
 
   useEffect(() => {
-
-    const savedUser =
-      localStorage.getItem(
-        "glowryLoggedInUser"
-      );
-
 
     const token =
       localStorage.getItem(
         "glowryToken"
       );
 
-
-    if (!savedUser || !token) {
-
-      setLoadingAddress(false);
-
+    if (!loggedInUser || !token) {
       navigate("/login");
-
-      return;
-
     }
 
+  }, [
+    loggedInUser,
+    navigate,
+  ]);
 
-    try {
 
-      const user =
-        JSON.parse(savedUser);
+  // =========================================
+  // FILL ADDRESS FORM
+  // =========================================
 
+  const fillAddressForm =
+    useCallback(
+      (address) => {
 
-      if (!user?.id) {
+        setFormData(
+          (previous) => ({
 
-        localStorage.removeItem(
-          "glowryLoggedInUser"
+            ...previous,
+
+            fullName:
+              address.name ||
+              loggedInUser?.fullName ||
+              loggedInUser?.name ||
+              "",
+
+            phone:
+              address.phone ||
+              loggedInUser?.phone ||
+              "",
+
+            email:
+              loggedInUser?.email ||
+              previous.email ||
+              "",
+
+            address:
+              address.address ||
+              "",
+
+            city:
+              address.city ||
+              "",
+
+            state:
+              address.state ||
+              "",
+
+            pincode:
+              address.pincode ||
+              "",
+          })
         );
 
-        localStorage.removeItem(
-          "glowryToken"
-        );
-
-        navigate("/login");
-
-        return;
-
-      }
-
-
-      setLoggedInUser(user);
-
-
-      setFormData((previous) => ({
-
-        ...previous,
-
-        fullName:
-          user.fullName ||
-          user.name ||
-          "",
-
-        phone:
-          user.phone ||
-          "",
-
-        email:
-          user.email ||
-          "",
-
-      }));
-
-
-    } catch (parseError) {
-
-      console.error(
-        "User Parse Error:",
-        parseError
-      );
-
-
-      localStorage.removeItem(
-        "glowryLoggedInUser"
-      );
-
-
-      localStorage.removeItem(
-        "glowryToken"
-      );
-
-
-      navigate("/login");
-
-    }
-
-  }, [navigate]);
+      },
+      [loggedInUser]
+    );
 
 
   // =========================================
@@ -215,15 +335,16 @@ function Checkout() {
 
   useEffect(() => {
 
+    if (!loggedInUser?.id) {
+      return;
+    }
+
+
+    let isMounted = true;
+
+
     const loadAddresses =
       async () => {
-
-        if (!loggedInUser?.id) {
-
-          return;
-
-        }
-
 
         try {
 
@@ -240,6 +361,10 @@ function Checkout() {
 
           if (!token) {
 
+            if (!isMounted) {
+              return;
+            }
+
             setError(
               "Authentication required. Please login again."
             );
@@ -247,28 +372,19 @@ function Checkout() {
             navigate("/login");
 
             return;
-
           }
 
-
-          // ===================================
-          // GET SAVED ADDRESSES
-          // ===================================
 
           const response =
             await axios.get(
 
-              `http://localhost:5000/api/addresses/${loggedInUser.id}`,
+              `${API_BASE_URL}/addresses/${loggedInUser.id}`,
 
               {
-
                 headers: {
-
                   Authorization:
                     `Bearer ${token}`,
-
                 },
-
               }
 
             );
@@ -282,14 +398,15 @@ function Checkout() {
               : [];
 
 
+          if (!isMounted) {
+            return;
+          }
+
+
           setAddresses(
             savedAddresses
           );
 
-
-          // ===================================
-          // DEFAULT ADDRESS
-          // ===================================
 
           const defaultAddress =
             savedAddresses.find(
@@ -304,13 +421,10 @@ function Checkout() {
               defaultAddress._id
             );
 
-
             fillAddressForm(
               defaultAddress
             );
-
           }
-
 
         } catch (error) {
 
@@ -320,79 +434,56 @@ function Checkout() {
           );
 
 
+          if (!isMounted) {
+            return;
+          }
+
+
+          if (
+            error.response?.status === 401 ||
+            error.response?.status === 403
+          ) {
+
+            localStorage.removeItem(
+              "glowryToken"
+            );
+
+            localStorage.removeItem(
+              "glowryLoggedInUser"
+            );
+
+            navigate("/login");
+
+            return;
+          }
+
+
           setError(
-
             error.response?.data?.message ||
-
             "Failed to load saved addresses."
-
           );
 
         } finally {
 
-          setLoadingAddress(false);
-
+          if (isMounted) {
+            setLoadingAddress(false);
+          }
         }
-
       };
 
 
     loadAddresses();
 
+
+    return () => {
+      isMounted = false;
+    };
+
   }, [
     loggedInUser,
     navigate,
+    fillAddressForm,
   ]);
-
-
-  // =========================================
-  // FILL ADDRESS FORM
-  // =========================================
-
-  const fillAddressForm =
-    (address) => {
-
-      setFormData(
-        (previous) => ({
-
-          ...previous,
-
-          fullName:
-            address.name ||
-            loggedInUser?.fullName ||
-            loggedInUser?.name ||
-            "",
-
-          phone:
-            address.phone ||
-            loggedInUser?.phone ||
-            "",
-
-          email:
-            loggedInUser?.email ||
-            previous.email ||
-            "",
-
-          address:
-            address.address ||
-            "",
-
-          city:
-            address.city ||
-            "",
-
-          state:
-            address.state ||
-            "",
-
-          pincode:
-            address.pincode ||
-            "",
-
-        })
-      );
-
-    };
 
 
   // =========================================
@@ -421,9 +512,7 @@ function Checkout() {
         fillAddressForm(
           selectedAddress
         );
-
       }
-
     };
 
 
@@ -440,13 +529,39 @@ function Checkout() {
       } = e.target;
 
 
+      let updatedValue =
+        value;
+
+
+      // PHONE
+
+      if (name === "phone") {
+
+        updatedValue =
+          value
+            .replace(/\D/g, "")
+            .slice(0, 10);
+      }
+
+
+      // PINCODE
+
+      if (name === "pincode") {
+
+        updatedValue =
+          value
+            .replace(/\D/g, "")
+            .slice(0, 6);
+      }
+
+
       setFormData(
         (previous) => ({
 
           ...previous,
 
-          [name]: value,
-
+          [name]:
+            updatedValue,
         })
       );
 
@@ -461,12 +576,10 @@ function Checkout() {
       ) {
 
         setSelectedAddressId("");
-
       }
 
 
       setError("");
-
     };
 
 
@@ -479,12 +592,16 @@ function Checkout() {
 
       e.preventDefault();
 
-
       setError("");
 
 
+      if (placingOrder) {
+        return;
+      }
+
+
       // =======================================
-      // CHECK USER
+      // LOGIN CHECK
       // =======================================
 
       if (!loggedInUser?.id) {
@@ -492,13 +609,8 @@ function Checkout() {
         navigate("/login");
 
         return;
-
       }
 
-
-      // =======================================
-      // CHECK TOKEN
-      // =======================================
 
       const token =
         localStorage.getItem(
@@ -515,44 +627,54 @@ function Checkout() {
         navigate("/login");
 
         return;
-
       }
 
 
       // =======================================
-      // CHECK CART
+      // CART CHECK
       // =======================================
 
-      if (cart.length === 0) {
+      if (
+        !Array.isArray(cart) ||
+        cart.length === 0
+      ) {
 
-        alert(
+        setError(
           "Your cart is empty."
         );
 
         return;
-
-      }
-
-
-      if (placingOrder) {
-
-        return;
-
       }
 
 
       // =======================================
-      // VALIDATION
+      // DELIVERY DETAILS
       // =======================================
+
+      const requiredFields = [
+
+        formData.fullName,
+
+        formData.phone,
+
+        formData.email,
+
+        formData.address,
+
+        formData.city,
+
+        formData.state,
+
+        formData.pincode,
+
+      ];
+
 
       if (
-        !formData.fullName ||
-        !formData.phone ||
-        !formData.email ||
-        !formData.address ||
-        !formData.city ||
-        !formData.state ||
-        !formData.pincode
+        requiredFields.some(
+          (field) =>
+            !String(field).trim()
+        )
       ) {
 
         setError(
@@ -560,7 +682,60 @@ function Checkout() {
         );
 
         return;
+      }
 
+
+      // =======================================
+      // PHONE VALIDATION
+      // =======================================
+
+      if (
+        !/^\d{10}$/.test(
+          formData.phone.trim()
+        )
+      ) {
+
+        setError(
+          "Please enter a valid 10-digit phone number."
+        );
+
+        return;
+      }
+
+
+      // =======================================
+      // PINCODE VALIDATION
+      // =======================================
+
+      if (
+        !/^\d{6}$/.test(
+          formData.pincode.trim()
+        )
+      ) {
+
+        setError(
+          "Please enter a valid 6-digit pincode."
+        );
+
+        return;
+      }
+
+
+      // =======================================
+      // EMAIL VALIDATION
+      // =======================================
+
+      if (
+        !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(
+          formData.email.trim()
+        )
+      ) {
+
+        setError(
+          "Please enter a valid email address."
+        );
+
+        return;
       }
 
 
@@ -570,7 +745,7 @@ function Checkout() {
 
 
         // =====================================
-        // CREATE ORDER ID
+        // ORDER ID
         // =====================================
 
         const orderId =
@@ -578,79 +753,59 @@ function Checkout() {
           Math.floor(
             100000 +
             Math.random() *
-            900000
-          );
-
-
-        // =====================================
-        // ORDER ITEMS
-        // =====================================
-
-        const orderItems =
-          cart.map(
-            (product) => ({
-
-              product:
-                product.id,
-
-              name:
-                product.name,
-
-              image:
-                product.image,
-
-              price:
-                Number(
-                  product.price || 0
-                ),
-
-              quantity:
-                Number(
-                  product.quantity || 1
-                ),
-
-            })
+              900000
           );
 
 
         // =====================================
         // ORDER DATA
         // =====================================
+        // IMPORTANT:
+        // Backend gets products and prices
+        // directly from MongoDB/cart.
+        //
+        // Therefore we do NOT send orderItems
+        // here. Backend is the source of truth.
 
         const orderData = {
 
           orderId,
 
-          userId:
-            loggedInUser.id,
+          customer: {
 
-          items:
-            orderItems,
+            fullName:
+              formData.fullName.trim(),
 
-          customer:
-            formData,
+            phone:
+              formData.phone.trim(),
 
-          subtotal:
-            Number(
-              cartTotal || 0
-            ),
+            email:
+              formData.email.trim(),
+
+            address:
+              formData.address.trim(),
+
+            city:
+              formData.city.trim(),
+
+            state:
+              formData.state.trim(),
+
+            pincode:
+              formData.pincode.trim(),
+          },
+
 
           coupon:
             coupon || null,
 
-          discount:
-            Number(
-              discount || 0
-            ),
 
-          total:
-            Number(
-              finalTotal || 0
-            ),
+          discount:
+            calculatedDiscount,
+
 
           paymentMethod:
             paymentMethod,
-
         };
 
 
@@ -667,19 +822,15 @@ function Checkout() {
         const response =
           await axios.post(
 
-            "http://localhost:5000/api/orders",
+            `${API_BASE_URL}/orders`,
 
             orderData,
 
             {
-
               headers: {
-
                 Authorization:
                   `Bearer ${token}`,
-
               },
-
             }
 
           );
@@ -692,10 +843,16 @@ function Checkout() {
 
 
         // =====================================
-        // CLEAR CART
+        // GET ACTUAL BACKEND ORDER
         // =====================================
 
-        await clearCart();
+        const createdOrder =
+          response.data?.order;
+
+
+        const finalOrderId =
+          createdOrder?.orderId ||
+          orderId;
 
 
         // =====================================
@@ -703,9 +860,8 @@ function Checkout() {
         // =====================================
 
         navigate(
-          `/order-success?id=${orderId}`
+          `/order-success?id=${finalOrderId}`
         );
-
 
       } catch (error) {
 
@@ -722,19 +878,14 @@ function Checkout() {
 
 
         setError(
-
           error.response?.data?.message ||
-
           "Failed to place order. Please try again."
-
         );
 
       } finally {
 
         setPlacingOrder(false);
-
       }
-
     };
 
 
@@ -742,7 +893,10 @@ function Checkout() {
   // EMPTY CART
   // =========================================
 
-  if (cart.length === 0) {
+  if (
+    !Array.isArray(cart) ||
+    cart.length === 0
+  ) {
 
     return (
 
@@ -776,9 +930,7 @@ function Checkout() {
         </section>
 
       </main>
-
     );
-
   }
 
 
@@ -793,7 +945,7 @@ function Checkout() {
 
       {/* =====================================
           HEADER
-      ===================================== */}
+      ====================================== */}
 
       <section className="checkout-header">
 
@@ -817,14 +969,14 @@ function Checkout() {
 
       {/* =====================================
           CONTENT
-      ===================================== */}
+      ====================================== */}
 
       <section className="checkout-content">
 
 
         {/* ===================================
-            LEFT SIDE
-        =================================== */}
+            CHECKOUT FORM
+        ==================================== */}
 
         <form
           className="checkout-form"
@@ -834,7 +986,7 @@ function Checkout() {
 
           {/* =================================
               SAVED ADDRESSES
-          ================================= */}
+          ================================== */}
 
           {!loadingAddress &&
             addresses.length > 0 && (
@@ -906,13 +1058,12 @@ function Checkout() {
                 </select>
 
               </div>
-
             )}
 
 
           {/* =================================
               ERROR
-          ================================= */}
+          ================================== */}
 
           {error && (
 
@@ -934,14 +1085,16 @@ function Checkout() {
 
           {/* =================================
               DELIVERY DETAILS
-          ================================= */}
+          ================================== */}
 
           <div className="checkout-section-title">
 
             <span>
+
               {addresses.length > 0
                 ? "02"
                 : "01"}
+
             </span>
 
 
@@ -1008,7 +1161,8 @@ function Checkout() {
                 onChange={
                   handleChange
                 }
-                placeholder="Enter your phone number"
+                placeholder="Enter your 10-digit phone number"
+                inputMode="numeric"
                 maxLength="10"
                 required
               />
@@ -1135,6 +1289,7 @@ function Checkout() {
                   handleChange
                 }
                 placeholder="6-digit pincode"
+                inputMode="numeric"
                 maxLength="6"
                 required
               />
@@ -1145,17 +1300,19 @@ function Checkout() {
 
 
           {/* =================================
-              OFFERS / COUPON
-          ================================= */}
+              OFFERS
+          ================================== */}
 
           <div className="checkout-offers">
 
             <div className="checkout-section-title">
 
               <span>
+
                 {addresses.length > 0
                   ? "03"
                   : "02"}
+
               </span>
 
 
@@ -1195,7 +1352,8 @@ function Checkout() {
 
 
                 <strong>
-                  -₹{discount}
+                  -₹
+                  {calculatedDiscount.toFixed(2)}
                 </strong>
 
               </div>
@@ -1240,16 +1398,18 @@ function Checkout() {
 
           {/* =================================
               PAYMENT
-          ================================= */}
+          ================================== */}
 
           <div className="checkout-payment">
 
             <div className="checkout-section-title">
 
               <span>
+
                 {addresses.length > 0
                   ? "04"
                   : "03"}
+
               </span>
 
 
@@ -1275,11 +1435,13 @@ function Checkout() {
               {/* COD */}
 
               <label
-                className={`payment-option ${
-                  paymentMethod === "cod"
-                    ? "selected"
-                    : ""
-                }`}
+                className={
+                  `payment-option ${
+                    paymentMethod === "cod"
+                      ? "selected"
+                      : ""
+                  }`
+                }
               >
 
                 <input
@@ -1313,14 +1475,16 @@ function Checkout() {
               </label>
 
 
-              {/* ONLINE PAYMENT */}
+              {/* ONLINE */}
 
               <label
-                className={`payment-option ${
-                  paymentMethod === "online"
-                    ? "selected"
-                    : ""
-                }`}
+                className={
+                  `payment-option ${
+                    paymentMethod === "online"
+                      ? "selected"
+                      : ""
+                  }`
+                }
               >
 
                 <input
@@ -1360,7 +1524,7 @@ function Checkout() {
 
           {/* =================================
               PLACE ORDER
-          ================================= */}
+          ================================== */}
 
           <button
             type="submit"
@@ -1382,16 +1546,14 @@ function Checkout() {
 
           </p>
 
-
         </form>
 
 
         {/* ===================================
-            RIGHT SIDE - SUMMARY
-        =================================== */}
+            ORDER SUMMARY
+        ==================================== */}
 
         <aside className="checkout-summary">
-
 
           <p className="summary-label">
             YOUR ORDER
@@ -1403,55 +1565,80 @@ function Checkout() {
           </h2>
 
 
-          {/* PRODUCTS */}
+          {/* =================================
+              PRODUCTS
+          ================================== */}
 
           <div className="checkout-products">
 
             {cart.map(
-              (product) => (
+              (product) => {
 
-                <div
-                  className="checkout-product"
-                  key={product.id}
-                >
+                const quantity =
+                  Number(
+                    product.quantity || 1
+                  );
 
-                  <div className="checkout-product-image">
+                const price =
+                  Number(
+                    product.price || 0
+                  );
 
-                    <img
-                      src={product.image}
-                      alt={product.name}
-                    />
+                const itemTotal =
+                  price * quantity;
 
 
-                    <span>
-                      {product.quantity}
-                    </span>
+                return (
+
+                  <div
+                    className="checkout-product"
+                    key={product.id}
+                  >
+
+                    <div className="checkout-product-image">
+
+                      <img
+                        src={product.image}
+                        alt={product.name}
+                      />
+
+
+                      <span>
+                        {quantity}
+                      </span>
+
+                    </div>
+
+
+                    <div className="checkout-product-info">
+
+                      <h3>
+                        {product.name}
+                      </h3>
+
+
+                      <p>
+                        ₹{price.toFixed(2)}
+                        {" × "}
+                        {quantity}
+                        {" = "}
+                        ₹{itemTotal.toFixed(2)}
+                      </p>
+
+                    </div>
 
                   </div>
 
-
-                  <div className="checkout-product-info">
-
-                    <h3>
-                      {product.name}
-                    </h3>
-
-
-                    <p>
-                      ₹{product.price}
-                    </p>
-
-                  </div>
-
-                </div>
-
-              )
+                );
+              }
             )}
 
           </div>
 
 
-          {/* SUBTOTAL */}
+          {/* =================================
+              SUBTOTAL
+          ================================== */}
 
           <div className="checkout-summary-line">
 
@@ -1461,15 +1648,18 @@ function Checkout() {
 
 
             <span>
-              ₹{cartTotal}
+              ₹
+              {calculatedSubtotal.toFixed(2)}
             </span>
 
           </div>
 
 
-          {/* COUPON */}
+          {/* =================================
+              DISCOUNT
+          ================================== */}
 
-          {discount > 0 && (
+          {calculatedDiscount > 0 && (
 
             <div className="checkout-summary-line discount-row">
 
@@ -1490,7 +1680,8 @@ function Checkout() {
 
 
               <span>
-                -₹{discount}
+                -₹
+                {calculatedDiscount.toFixed(2)}
               </span>
 
             </div>
@@ -1498,7 +1689,9 @@ function Checkout() {
           )}
 
 
-          {/* SHIPPING */}
+          {/* =================================
+              SHIPPING
+          ================================== */}
 
           <div className="checkout-summary-line">
 
@@ -1514,10 +1707,13 @@ function Checkout() {
           </div>
 
 
-          <div className="summary-divider"></div>
+          <div className="summary-divider">
+          </div>
 
 
-          {/* TOTAL */}
+          {/* =================================
+              FINAL TOTAL
+          ================================== */}
 
           <div className="checkout-total">
 
@@ -1527,26 +1723,32 @@ function Checkout() {
 
 
             <strong>
-              ₹{finalTotal}
+              ₹
+              {calculatedFinalTotal.toFixed(2)}
             </strong>
 
           </div>
 
 
-          {/* SAVINGS */}
+          {/* =================================
+              SAVINGS
+          ================================== */}
 
-          {discount > 0 && (
+          {calculatedDiscount > 0 && (
 
             <p className="cart-savings">
 
-              ✦ You saved ₹{discount}
+              ✦ You saved ₹
+              {calculatedDiscount.toFixed(2)}
 
             </p>
 
           )}
 
 
-          {/* TRUST */}
+          {/* =================================
+              TRUST
+          ================================== */}
 
           <div className="checkout-trust">
 
@@ -1558,17 +1760,14 @@ function Checkout() {
 
           </div>
 
-
         </aside>
-
 
       </section>
 
     </main>
-
   );
-
 }
 
 
 export default Checkout;
+

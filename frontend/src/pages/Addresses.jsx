@@ -1,111 +1,325 @@
+import {
+  useEffect,
+  useState,
+} from "react";
 
-import { useEffect, useState } from "react";
 import axios from "axios";
 
-function Addresses() {
-  // =========================================
-  // STATES
-  // =========================================
+import {
+  API_BASE_URL,
+} from "../config/api";
 
-  const [addresses, setAddresses] = useState([]);
 
-  const [showForm, setShowForm] = useState(false);
+// =========================================
+// GET AUTH CONFIG
+// =========================================
 
-  const [editId, setEditId] = useState(null);
+const getAuthConfig = () => {
 
-  const [loading, setLoading] = useState(true);
+  const token =
+    localStorage.getItem(
+      "glowryToken"
+    );
 
-  const [saving, setSaving] = useState(false);
+  if (!token) {
 
-  const [error, setError] = useState("");
+    return null;
 
-  const [formData, setFormData] = useState({
-    name: "",
-    phone: "",
-    address: "",
-    city: "",
-    state: "",
-    pincode: "",
-    isDefault: false,
-  });
+  }
 
-  // =========================================
-  // GET LOGGED IN USER
-  // =========================================
+  return {
 
-  const getLoggedInUser = () => {
-    const savedUser = localStorage.getItem(
+    headers: {
+
+      Authorization:
+        `Bearer ${token}`,
+
+    },
+
+  };
+
+};
+
+
+// =========================================
+// GET LOGGED IN USER
+// =========================================
+
+const getLoggedInUser = () => {
+
+  const savedUser =
+    localStorage.getItem(
       "glowryLoggedInUser"
     );
 
-    if (!savedUser) {
-      return null;
-    }
+  if (!savedUser) {
 
-    try {
-      return JSON.parse(savedUser);
-    } catch (error) {
-      console.error(
-        "User Parse Error:",
-        error
-      );
+    return null;
 
-      return null;
-    }
-  };
+  }
 
-  // =========================================
+  try {
+
+    return JSON.parse(
+      savedUser
+    );
+
+  } catch (error) {
+
+    console.error(
+      "User Parse Error:",
+      error
+    );
+
+    return null;
+
+  }
+
+};
+
+
+// =========================================
+// INITIAL FORM
+// =========================================
+
+const initialFormData = {
+
+  name: "",
+  phone: "",
+  address: "",
+  city: "",
+  state: "",
+  pincode: "",
+  isDefault: false,
+
+};
+
+
+// =========================================
+// ADDRESSES COMPONENT
+// =========================================
+
+function Addresses() {
+
+
+  // =======================================
+  // STATES
+  // =======================================
+
+  const [addresses, setAddresses] =
+    useState([]);
+
+  const [showForm, setShowForm] =
+    useState(false);
+
+  const [editId, setEditId] =
+    useState(null);
+
+  const [loading, setLoading] =
+    useState(true);
+
+  const [saving, setSaving] =
+    useState(false);
+
+  const [error, setError] =
+    useState("");
+
+  const [formData, setFormData] =
+    useState(initialFormData);
+
+
+  // =======================================
   // LOAD ADDRESSES
-  // =========================================
+  // =======================================
 
   const loadAddresses = async () => {
+
     try {
+
       setLoading(true);
+
       setError("");
 
-      const user = getLoggedInUser();
 
-      if (!user || !user.id) {
+      const user =
+        getLoggedInUser();
+
+      const authConfig =
+        getAuthConfig();
+
+
+      // ===================================
+      // CHECK LOGIN USER
+      // ===================================
+
+      if (
+        !user ||
+        !user.id
+      ) {
+
         setError(
           "Please login to manage your addresses."
         );
 
         return;
+
       }
 
-      const response = await axios.get(
-        `http://localhost:5000/api/addresses/${user.id}`
-      );
 
-      setAddresses(
-        Array.isArray(response.data)
-          ? response.data
-          : []
-      );
+      // ===================================
+      // CHECK TOKEN
+      // ===================================
+
+      if (!authConfig) {
+
+        setError(
+          "Your session has expired. Please login again."
+        );
+
+        return;
+
+      }
+
+
+      // ===================================
+      // GET ADDRESSES
+      // ===================================
+
+      const response =
+        await axios.get(
+
+          `${API_BASE_URL}/addresses/${user.id}`,
+
+          authConfig
+
+        );
+
+
+      const data =
+        response.data;
+
+
+      // ===================================
+      // SET ADDRESSES
+      // ===================================
+
+      if (
+        Array.isArray(data)
+      ) {
+
+        setAddresses(data);
+
+      }
+
+      else if (
+        Array.isArray(
+          data?.addresses
+        )
+      ) {
+
+        setAddresses(
+          data.addresses
+        );
+
+      }
+
+      else {
+
+        setAddresses([]);
+
+      }
+
+
     } catch (error) {
+
       console.error(
         "Load Addresses Error:",
         error
       );
 
-      setError(
-        error.response?.data?.message ||
+
+      // ===================================
+      // AUTH ERROR
+      // ===================================
+
+      if (
+        error.response?.status === 401
+      ) {
+
+        setError(
+          "Your session has expired. Please login again."
+        );
+
+      }
+
+
+      // ===================================
+      // FORBIDDEN
+      // ===================================
+
+      else if (
+        error.response?.status === 403
+      ) {
+
+        setError(
+
+          error.response?.data?.message ||
+
+          "You are not authorized to access these addresses."
+
+        );
+
+      }
+
+
+      // ===================================
+      // OTHER ERROR
+      // ===================================
+
+      else {
+
+        setError(
+
+          error.response?.data?.message ||
+
           "Failed to load addresses."
-      );
+
+        );
+
+      }
+
     } finally {
+
       setLoading(false);
+
     }
+
   };
 
+
+  // =========================================
+  // LOAD ON PAGE OPEN
+  // =========================================
+
   useEffect(() => {
-    loadAddresses();
+
+    const load = async () => {
+
+      await loadAddresses();
+
+    };
+
+    load();
+
   }, []);
+
 
   // =========================================
   // INPUT CHANGE
   // =========================================
 
   const handleChange = (e) => {
+
     const {
       name,
       value,
@@ -113,283 +327,529 @@ function Addresses() {
       checked,
     } = e.target;
 
-    setFormData((previous) => ({
-      ...previous,
 
-      [name]:
-        type === "checkbox"
-          ? checked
-          : value,
-    }));
+    setFormData(
+      (previous) => ({
+
+        ...previous,
+
+        [name]:
+          type === "checkbox"
+            ? checked
+            : value,
+
+      })
+    );
+
 
     setError("");
+
   };
+
 
   // =========================================
   // RESET FORM
   // =========================================
 
   const resetForm = () => {
+
     setFormData({
-      name: "",
-      phone: "",
-      address: "",
-      city: "",
-      state: "",
-      pincode: "",
-      isDefault: false,
+      ...initialFormData,
     });
 
     setEditId(null);
+
     setShowForm(false);
+
     setError("");
+
   };
+
 
   // =========================================
   // OPEN ADD FORM
   // =========================================
 
   const handleAddAddress = () => {
+
     setEditId(null);
 
+
     setFormData({
-      name: "",
-      phone: "",
-      address: "",
-      city: "",
-      state: "",
-      pincode: "",
-      isDefault: addresses.length === 0,
+
+      ...initialFormData,
+
+      isDefault:
+        addresses.length === 0,
+
     });
 
+
     setError("");
+
     setShowForm(true);
+
   };
+
 
   // =========================================
   // SAVE ADDRESS
   // =========================================
 
-  const handleSaveAddress = async (e) => {
-    e.preventDefault();
+  const handleSaveAddress =
+    async (e) => {
 
-    setError("");
+      e.preventDefault();
 
-    const user = getLoggedInUser();
+      setError("");
 
-    if (!user || !user.id) {
-      setError("Please login first.");
-      return;
-    }
 
-    try {
-      setSaving(true);
+      const user =
+        getLoggedInUser();
 
-      // ---------------------------------------
-      // EDIT ADDRESS
-      // ---------------------------------------
+      const authConfig =
+        getAuthConfig();
 
-      if (editId) {
-        const response = await axios.put(
-          `http://localhost:5000/api/addresses/${editId}`,
-          formData
+
+      // ===================================
+      // CHECK USER
+      // ===================================
+
+      if (
+        !user ||
+        !user.id
+      ) {
+
+        setError(
+          "Please login first."
         );
 
-        const updatedAddress =
-          response.data.address;
+        return;
 
-        setAddresses((previous) =>
-          previous.map((item) =>
-            item._id === editId
-              ? updatedAddress
-              : item
-          )
+      }
+
+
+      // ===================================
+      // CHECK TOKEN
+      // ===================================
+
+      if (!authConfig) {
+
+        setError(
+          "Your session has expired. Please login again."
         );
 
-        // If edited address becomes default,
-        // remove default from other addresses.
-        if (updatedAddress?.isDefault) {
-          setAddresses((previous) =>
-            previous.map((item) => ({
-              ...item,
+        return;
 
-              isDefault:
-                item._id === editId,
-            }))
+      }
+
+
+      try {
+
+        setSaving(true);
+
+
+        // =================================
+        // EDIT ADDRESS
+        // =================================
+
+        if (editId) {
+
+          await axios.put(
+
+            `${API_BASE_URL}/addresses/${editId}`,
+
+            formData,
+
+            authConfig
+
           );
+
         }
-      }
 
-      // ---------------------------------------
-      // ADD ADDRESS
-      // ---------------------------------------
 
-      else {
-        const response = await axios.post(
-          "http://localhost:5000/api/addresses",
-          {
-            userId: user.id,
-            ...formData,
-          }
+        // =================================
+        // ADD ADDRESS
+        // =================================
+
+        else {
+
+          await axios.post(
+
+            `${API_BASE_URL}/addresses`,
+
+            {
+
+              userId:
+                user.id,
+
+              ...formData,
+
+            },
+
+            authConfig
+
+          );
+
+        }
+
+
+        // =================================
+        // RESET FORM
+        // =================================
+
+        resetForm();
+
+
+        // =================================
+        // REFRESH FROM BACKEND
+        // =================================
+
+        await loadAddresses();
+
+
+      } catch (error) {
+
+        console.error(
+          "Save Address Error:",
+          error
         );
 
-        const newAddress =
-          response.data.address;
 
-        setAddresses((previous) => {
-          let updated = [
-            ...previous,
-            newAddress,
-          ];
+        // =================================
+        // AUTH ERROR
+        // =================================
 
-          // If new address is default,
-          // make all other addresses non-default.
-          if (newAddress?.isDefault) {
-            updated = updated.map(
-              (item) => ({
-                ...item,
+        if (
+          error.response?.status === 401
+        ) {
 
-                isDefault:
-                  item._id ===
-                  newAddress._id,
-              })
-            );
-          }
+          setError(
+            "Your session has expired. Please login again."
+          );
 
-          return updated;
-        });
+        }
+
+
+        // =================================
+        // FORBIDDEN
+        // =================================
+
+        else if (
+          error.response?.status === 403
+        ) {
+
+          setError(
+
+            error.response?.data?.message ||
+
+            "You are not authorized to modify this address."
+
+          );
+
+        }
+
+
+        // =================================
+        // OTHER ERROR
+        // =================================
+
+        else {
+
+          setError(
+
+            error.response?.data?.message ||
+
+            "Failed to save address."
+
+          );
+
+        }
+
+      } finally {
+
+        setSaving(false);
+
       }
 
-      resetForm();
-    } catch (error) {
-      console.error(
-        "Save Address Error:",
-        error
-      );
+    };
 
-      setError(
-        error.response?.data?.message ||
-          "Failed to save address."
-      );
-    } finally {
-      setSaving(false);
-    }
-  };
 
   // =========================================
   // DELETE ADDRESS
   // =========================================
 
-  const deleteAddress = async (id) => {
-    const confirmDelete =
-      window.confirm(
-        "Are you sure you want to delete this address?"
-      );
+  const deleteAddress =
+    async (id) => {
 
-    if (!confirmDelete) {
-      return;
-    }
 
-    try {
-      setError("");
+      const confirmDelete =
+        window.confirm(
 
-      await axios.delete(
-        `http://localhost:5000/api/addresses/${id}`
-      );
+          "Are you sure you want to delete this address?"
 
-      await loadAddresses();
-    } catch (error) {
-      console.error(
-        "Delete Address Error:",
-        error
-      );
+        );
 
-      setError(
-        error.response?.data?.message ||
-          "Failed to delete address."
-      );
-    }
-  };
+
+      if (!confirmDelete) {
+
+        return;
+
+      }
+
+
+      const authConfig =
+        getAuthConfig();
+
+
+      if (!authConfig) {
+
+        setError(
+          "Your session has expired. Please login again."
+        );
+
+        return;
+
+      }
+
+
+      try {
+
+        setError("");
+
+
+        await axios.delete(
+
+          `${API_BASE_URL}/addresses/${id}`,
+
+          authConfig
+
+        );
+
+
+        await loadAddresses();
+
+
+      } catch (error) {
+
+        console.error(
+          "Delete Address Error:",
+          error
+        );
+
+
+        if (
+          error.response?.status === 401
+        ) {
+
+          setError(
+            "Your session has expired. Please login again."
+          );
+
+        }
+
+        else if (
+          error.response?.status === 403
+        ) {
+
+          setError(
+
+            error.response?.data?.message ||
+
+            "You are not authorized to delete this address."
+
+          );
+
+        }
+
+        else {
+
+          setError(
+
+            error.response?.data?.message ||
+
+            "Failed to delete address."
+
+          );
+
+        }
+
+      }
+
+    };
+
 
   // =========================================
   // EDIT ADDRESS
   // =========================================
 
-  const editAddress = (item) => {
-    setFormData({
-      name: item.name || "",
-      phone: item.phone || "",
-      address: item.address || "",
-      city: item.city || "",
-      state: item.state || "",
-      pincode: item.pincode || "",
-      isDefault: Boolean(item.isDefault),
-    });
+  const editAddress =
+    (item) => {
 
-    setEditId(item._id);
-    setShowForm(true);
-    setError("");
-  };
+      setFormData({
+
+        name:
+          item.name || "",
+
+        phone:
+          item.phone || "",
+
+        address:
+          item.address || "",
+
+        city:
+          item.city || "",
+
+        state:
+          item.state || "",
+
+        pincode:
+          item.pincode || "",
+
+        isDefault:
+          Boolean(
+            item.isDefault
+          ),
+
+      });
+
+
+      setEditId(
+        item._id
+      );
+
+
+      setShowForm(true);
+
+      setError("");
+
+    };
+
 
   // =========================================
   // MAKE DEFAULT
   // =========================================
 
-  const makeDefault = async (id) => {
-    try {
-      setError("");
+  const makeDefault =
+    async (id) => {
 
-      const response = await axios.put(
-        `http://localhost:5000/api/addresses/default/${id}`
-      );
 
-      const defaultAddress =
-        response.data.address;
+      const authConfig =
+        getAuthConfig();
 
-      setAddresses((previous) =>
-        previous.map((item) => ({
-          ...item,
 
-          isDefault:
-            item._id ===
-            defaultAddress._id,
-        }))
-      );
-    } catch (error) {
-      console.error(
-        "Make Default Error:",
-        error
-      );
+      if (!authConfig) {
 
-      setError(
-        error.response?.data?.message ||
-          "Failed to update default address."
-      );
-    }
-  };
+        setError(
+          "Your session has expired. Please login again."
+        );
+
+        return;
+
+      }
+
+
+      try {
+
+        setError("");
+
+
+        await axios.put(
+
+          `${API_BASE_URL}/addresses/default/${id}`,
+
+          {},
+
+          authConfig
+
+        );
+
+
+        await loadAddresses();
+
+
+      } catch (error) {
+
+        console.error(
+          "Make Default Error:",
+          error
+        );
+
+
+        if (
+          error.response?.status === 401
+        ) {
+
+          setError(
+            "Your session has expired. Please login again."
+          );
+
+        }
+
+        else if (
+          error.response?.status === 403
+        ) {
+
+          setError(
+
+            error.response?.data?.message ||
+
+            "You are not authorized to update this address."
+
+          );
+
+        }
+
+        else {
+
+          setError(
+
+            error.response?.data?.message ||
+
+            "Failed to update default address."
+
+          );
+
+        }
+
+      }
+
+    };
+
 
   // =========================================
   // LOADING
   // =========================================
 
   if (loading) {
+
     return (
+
       <main className="address-page">
+
         <section className="address-container">
+
           <p>
             Loading addresses...
           </p>
+
         </section>
+
       </main>
+
     );
+
   }
+
 
   // =========================================
   // UI
   // =========================================
 
   return (
+
     <main className="address-page">
+
 
       {/* =====================================
           HEADER
@@ -401,9 +861,11 @@ function Addresses() {
           MY GLOWRY
         </p>
 
+
         <h1>
           My Addresses
         </h1>
+
 
         <p>
           Manage your delivery addresses.
@@ -411,15 +873,20 @@ function Addresses() {
 
       </section>
 
+
       {/* =====================================
           CONTENT
       ===================================== */}
 
       <section className="address-container">
 
-        {/* ERROR */}
+
+        {/* ===================================
+            ERROR
+        =================================== */}
 
         {error && (
+
           <div className="login-error-box">
 
             <span>
@@ -431,35 +898,48 @@ function Addresses() {
             </p>
 
           </div>
+
         )}
 
-        {/* ADD BUTTON */}
+
+        {/* ===================================
+            ADD BUTTON
+        =================================== */}
 
         {!showForm && (
+
           <button
             type="button"
             className="add-address-button"
             onClick={handleAddAddress}
           >
+
             + Add New Address
+
           </button>
+
         )}
+
 
         {/* ===================================
             FORM
         =================================== */}
 
         {showForm && (
+
           <form
             className="address-form"
             onSubmit={handleSaveAddress}
           >
 
             <h2>
+
               {editId
                 ? "Edit Address"
                 : "Add New Address"}
+
             </h2>
+
 
             {/* NAME */}
 
@@ -469,8 +949,10 @@ function Addresses() {
               placeholder="Full Name"
               value={formData.name}
               onChange={handleChange}
+              autoComplete="name"
               required
             />
+
 
             {/* PHONE */}
 
@@ -480,8 +962,10 @@ function Addresses() {
               placeholder="Phone Number"
               value={formData.phone}
               onChange={handleChange}
+              autoComplete="tel"
               required
             />
+
 
             {/* ADDRESS */}
 
@@ -490,8 +974,10 @@ function Addresses() {
               placeholder="Full Address"
               value={formData.address}
               onChange={handleChange}
+              autoComplete="street-address"
               required
             />
+
 
             {/* CITY */}
 
@@ -501,8 +987,10 @@ function Addresses() {
               placeholder="City"
               value={formData.city}
               onChange={handleChange}
+              autoComplete="address-level2"
               required
             />
+
 
             {/* STATE */}
 
@@ -512,8 +1000,10 @@ function Addresses() {
               placeholder="State"
               value={formData.state}
               onChange={handleChange}
+              autoComplete="address-level1"
               required
             />
+
 
             {/* PINCODE */}
 
@@ -523,14 +1013,17 @@ function Addresses() {
               placeholder="Pincode"
               value={formData.pincode}
               onChange={handleChange}
+              inputMode="numeric"
+              autoComplete="postal-code"
               required
             />
 
-            {/* =================================
-                DEFAULT ADDRESS
-            ================================= */}
 
-            <label className="address-default-option">
+            {/* DEFAULT ADDRESS */}
+
+            <label
+              className="address-default-option"
+            >
 
               <input
                 type="checkbox"
@@ -541,15 +1034,15 @@ function Addresses() {
                 onChange={handleChange}
               />
 
+
               <span>
                 Make this my default address
               </span>
 
             </label>
 
-            {/* =================================
-                BUTTONS
-            ================================= */}
+
+            {/* BUTTONS */}
 
             <div className="address-actions">
 
@@ -557,23 +1050,32 @@ function Addresses() {
                 type="submit"
                 disabled={saving}
               >
+
                 {saving
                   ? "Saving..."
-                  : "Save Address"}
+                  : editId
+                    ? "Update Address"
+                    : "Save Address"}
+
               </button>
+
 
               <button
                 type="button"
                 onClick={resetForm}
                 disabled={saving}
               >
+
                 Cancel
+
               </button>
 
             </div>
 
           </form>
+
         )}
+
 
         {/* ===================================
             ADDRESS LIST
@@ -589,9 +1091,11 @@ function Addresses() {
                 📍
               </div>
 
+
               <h3>
                 No saved addresses
               </h3>
+
 
               <p>
                 Add an address for faster checkout.
@@ -601,92 +1105,121 @@ function Addresses() {
 
           ) : (
 
-            addresses.map((item) => (
+            addresses.map(
+              (item) => (
 
-              <div
-                className="address-card"
-                key={item._id}
-              >
+                <div
+                  className="address-card"
+                  key={item._id}
+                >
 
-                {/* DEFAULT BADGE */}
 
-                {item.isDefault && (
-                  <span className="default-address">
-                    Default
-                  </span>
-                )}
+                  {/* DEFAULT BADGE */}
 
-                {/* NAME */}
+                  {item.isDefault && (
 
-                <h3>
-                  {item.name}
-                </h3>
+                    <span
+                      className="default-address"
+                    >
+                      Default
+                    </span>
 
-                {/* PHONE */}
+                  )}
 
-                <p>
-                  📞 {item.phone}
-                </p>
 
-                {/* ADDRESS */}
+                  {/* NAME */}
 
-                <p>
+                  <h3>
+                    {item.name}
+                  </h3>
 
-                  {item.address}
 
-                  <br />
+                  {/* PHONE */}
 
-                  {item.city},{" "}
-                  {item.state}
+                  <p>
+                    📞 {item.phone}
+                  </p>
 
-                  <br />
 
-                  {item.pincode}
+                  {/* ADDRESS */}
 
-                </p>
+                  <p>
 
-                {/* ACTIONS */}
+                    {item.address}
 
-                <div className="address-actions">
+                    <br />
 
-                  <button
-                    type="button"
-                    onClick={() =>
-                      editAddress(item)
-                    }
-                  >
-                    Edit
-                  </button>
+                    {item.city},{" "}
 
-                  <button
-                    type="button"
-                    onClick={() =>
-                      deleteAddress(
-                        item._id
-                      )
-                    }
-                  >
-                    Delete
-                  </button>
+                    {item.state}
 
-                  {!item.isDefault && (
+                    <br />
+
+                    {item.pincode}
+
+                  </p>
+
+
+                  {/* ACTIONS */}
+
+                  <div className="address-actions">
+
+
+                    {/* EDIT */}
+
                     <button
                       type="button"
                       onClick={() =>
-                        makeDefault(
+                        editAddress(item)
+                      }
+                    >
+
+                      Edit
+
+                    </button>
+
+
+                    {/* DELETE */}
+
+                    <button
+                      type="button"
+                      onClick={() =>
+                        deleteAddress(
                           item._id
                         )
                       }
                     >
-                      Make Default
+
+                      Delete
+
                     </button>
-                  )}
+
+
+                    {/* MAKE DEFAULT */}
+
+                    {!item.isDefault && (
+
+                      <button
+                        type="button"
+                        onClick={() =>
+                          makeDefault(
+                            item._id
+                          )
+                        }
+                      >
+
+                        Make Default
+
+                      </button>
+
+                    )}
+
+                  </div>
 
                 </div>
 
-              </div>
-
-            ))
+              )
+            )
 
           )}
 
@@ -695,8 +1228,10 @@ function Addresses() {
       </section>
 
     </main>
+
   );
+
 }
 
-export default Addresses;
 
+export default Addresses;
