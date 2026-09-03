@@ -1,3 +1,4 @@
+
 import express from "express";
 import bcrypt from "bcryptjs";
 import crypto from "crypto";
@@ -36,6 +37,24 @@ router.post("/register", async (req, res) => {
       });
 
     }
+
+    // =======================================
+    // PASSWORD STRENGTH VALIDATION
+    // =======================================
+
+const passwordRegex =
+  /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d).{8,}$/;
+
+if (!passwordRegex.test(password)) {
+
+  return res.status(400).json({
+
+    message:
+      "Password must be at least 8 characters long and contain at least one uppercase letter, one lowercase letter, and one number.",
+
+  });
+
+}
 
 
     const normalizedEmail =
@@ -251,12 +270,16 @@ router.post("/login", async (req, res) => {
       });
 
 
+    // =======================================
+    // GENERIC LOGIN ERROR
+    // =======================================
+
     if (!user) {
 
-      return res.status(404).json({
+      return res.status(401).json({
 
         message:
-          "User not found.",
+          "Invalid email or password.",
 
       });
 
@@ -282,7 +305,7 @@ router.post("/login", async (req, res) => {
       return res.status(401).json({
 
         message:
-          "Invalid password.",
+          "Invalid email or password.",
 
       });
 
@@ -963,19 +986,19 @@ router.put(
       }
 
 
-      if (
-        newPassword.length < 6
-      ) {
+      const passwordRegex =
+        /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d).{8,}$/;
+
+      if (!passwordRegex.test(newPassword)) {
 
         return res.status(400).json({
 
           message:
-            "New password must be at least 6 characters.",
+            "New password must be at least 8 characters long and contain at least one uppercase letter, one lowercase letter, and one number.",
 
         });
 
       }
-
 
       // =====================================
       // FIND USER
@@ -1321,12 +1344,15 @@ router.put(
       }
 
 
-      if (password.length < 6) {
+      const passwordRegex =
+        /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d).{8,}$/;
+
+      if (!passwordRegex.test(password)) {
 
         return res.status(400).json({
 
           message:
-            "Password must be at least 6 characters.",
+            "Password must be at least 8 characters long and contain at least one uppercase letter, one lowercase letter, and one number.",
 
         });
 
@@ -1438,3 +1464,4 @@ router.put(
 
 
 export default router;
+

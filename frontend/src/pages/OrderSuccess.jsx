@@ -8,10 +8,9 @@ import {
   useState,
 } from "react";
 
-import axios from "axios";
+import apiClient from "../services/apiClient";
 
 import {
-  API_BASE_URL,
   SERVER_BASE_URL,
 } from "../config/api";
 
@@ -59,7 +58,7 @@ function OrderSuccess() {
       return `${SERVER_BASE_URL}${image}`;
     }
 
-    return `${SERVER_BASE_URL}/${image}`;
+    return `${SERVER_BASE_URL}/images/${image}`;
   };
 
 
@@ -118,24 +117,9 @@ function OrderSuccess() {
         // -------------------------------------
 
         const response =
-          await axios.get(
-
-            `${API_BASE_URL}/orders/details/${orderId}`,
-
-            {
-              headers: {
-                Authorization:
-                  `Bearer ${token}`,
-              },
-            }
-
+          await apiClient.get(
+            `/orders/details/${orderId}`
           );
-
-
-        console.log(
-          "Fetched Order:",
-          response.data
-        );
 
 
         setOrder(
@@ -148,11 +132,6 @@ function OrderSuccess() {
         console.error(
           "Fetch Order Error:",
           error
-        );
-
-        console.error(
-          "Backend Response:",
-          error.response?.data
         );
 
 
@@ -444,11 +423,6 @@ function OrderSuccess() {
                         }
 
                         onError={(e) => {
-
-                          console.error(
-                            "Order image failed:",
-                            product.image
-                          );
 
                           e.currentTarget.style.display =
                             "none";

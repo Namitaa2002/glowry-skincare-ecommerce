@@ -1,12 +1,11 @@
+
 import mongoose from "mongoose";
 import dotenv from "dotenv";
 
 import connectDB from "./config/db.js";
 import Product from "./models/Product.js";
 
-
 dotenv.config();
-
 
 // =========================================
 // PRODUCTS DATA
@@ -87,7 +86,6 @@ const products = [
     stock: 50,
   },
 
-
   // =========================================
   // TONERS
   // =========================================
@@ -126,7 +124,6 @@ const products = [
       "A soothing toner designed to support the skin barrier.",
     stock: 50,
   },
-
 
   // =========================================
   // SERUMS
@@ -183,7 +180,6 @@ const products = [
     stock: 50,
   },
 
-
   // =========================================
   // MOISTURIZERS
   // =========================================
@@ -239,7 +235,6 @@ const products = [
     stock: 50,
   },
 
-
   // =========================================
   // SUNSCREENS
   // =========================================
@@ -279,7 +274,6 @@ const products = [
     stock: 50,
   },
 
-
   // =========================================
   // FACE MASKS
   // =========================================
@@ -318,7 +312,6 @@ const products = [
     stock: 50,
   },
 
-
   // =========================================
   // EYE CARE
   // =========================================
@@ -338,7 +331,6 @@ const products = [
       "A refreshing caffeine eye gel for the delicate eye area.",
     stock: 50,
   },
-
 
   // =========================================
   // LIP CARE
@@ -364,7 +356,6 @@ const products = [
 
 ];
 
-
 // =========================================
 // SEED DATABASE
 // =========================================
@@ -378,10 +369,6 @@ const seedProducts = async () => {
     await Product.deleteMany();
 
     await Product.insertMany(products);
-
-    console.log(
-      `${products.length} products inserted successfully`
-    );
 
     await mongoose.connection.close();
 
@@ -402,5 +389,5 @@ const seedProducts = async () => {
 
 };
 
-
 seedProducts();
+

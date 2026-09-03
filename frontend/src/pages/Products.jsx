@@ -1,10 +1,10 @@
+
 import { useEffect, useState } from "react";
-import axios from "axios";
+import apiClient from "../services/apiClient";
 
 import ProductCard from "../components/ProductCard";
 
 import {
-  API_BASE_URL,
   SERVER_BASE_URL,
 } from "../config/api";
 
@@ -56,12 +56,14 @@ function Products() {
         setError("");
 
         const response =
-          await axios.get(
-            `${API_BASE_URL}/products`
+          await apiClient.get(
+            "/products"
           );
 
         setProducts(
-          response.data
+          Array.isArray(response.data)
+            ? response.data
+            : []
         );
 
       } catch (err) {
@@ -597,3 +599,4 @@ function Products() {
 }
 
 export default Products;
+

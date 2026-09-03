@@ -1,8 +1,12 @@
-import { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
-import axios from "axios";
 
-import { API_BASE_URL } from "../config/api";
+import {
+  useEffect,
+  useState,
+} from "react";
+
+import { useNavigate } from "react-router-dom";
+
+import apiClient from "../services/apiClient";
 
 // =========================================================
 // ADMIN USERS
@@ -31,7 +35,10 @@ function AdminUsers() {
         setLoading(true);
         setError("");
 
-        const token = localStorage.getItem("glowryAdminToken");
+        const token =
+          localStorage.getItem(
+            "glowryAdminToken"
+          );
 
         // CHECK TOKEN
         if (!token) {
@@ -40,19 +47,10 @@ function AdminUsers() {
         }
 
         // API REQUEST
-        const response = await axios.get(
-          `${API_BASE_URL}/admin/users`,
-          {
-            headers: {
-              Authorization: `Bearer ${token}`,
-            },
-          }
-        );
-
-        console.log(
-          "Admin Customers Response:",
-          response.data
-        );
+        const response =
+          await apiClient.get(
+            "/admin/users"
+          );
 
         // BACKEND RETURNS:
         // {
@@ -60,8 +58,14 @@ function AdminUsers() {
         //   totalCustomers: 0
         // }
 
-        if (Array.isArray(response.data?.customers)) {
-          setUsers(response.data.customers);
+        if (
+          Array.isArray(
+            response.data?.customers
+          )
+        ) {
+          setUsers(
+            response.data.customers
+          );
         } else {
           setUsers([]);
         }
@@ -104,30 +108,32 @@ function AdminUsers() {
   // SEARCH CUSTOMERS
   // =========================================================
 
-  const filteredUsers = users.filter((user) => {
-    const searchText = search
-      .toLowerCase()
-      .trim();
-
-    if (!searchText) {
-      return true;
-    }
-
-    return (
-      user.name
-        ?.toLowerCase()
-        .includes(searchText) ||
-
-      user.email
-        ?.toLowerCase()
-        .includes(searchText) ||
-
-      user.phone
-        ?.toString()
+  const filteredUsers = users.filter(
+    (user) => {
+      const searchText = search
         .toLowerCase()
-        .includes(searchText)
-    );
-  });
+        .trim();
+
+      if (!searchText) {
+        return true;
+      }
+
+      return (
+        user.name
+          ?.toLowerCase()
+          .includes(searchText) ||
+
+        user.email
+          ?.toLowerCase()
+          .includes(searchText) ||
+
+        user.phone
+          ?.toString()
+          .toLowerCase()
+          .includes(searchText)
+      );
+    }
+  );
 
   // =========================================================
   // VIEW DETAILS
@@ -162,7 +168,8 @@ function AdminUsers() {
         handleEscape
       );
 
-      document.body.style.overflow = "hidden";
+      document.body.style.overflow =
+        "hidden";
     }
 
     return () => {
@@ -214,8 +221,11 @@ function AdminUsers() {
           </p>
 
           <button
+            type="button"
             onClick={() =>
-              navigate("/admin/dashboard")
+              navigate(
+                "/admin/dashboard"
+              )
             }
           >
             Back to Dashboard
@@ -254,9 +264,12 @@ function AdminUsers() {
         </div>
 
         <button
+          type="button"
           className="admin-users-dashboard-button"
           onClick={() =>
-            navigate("/admin/dashboard")
+            navigate(
+              "/admin/dashboard"
+            )
           }
         >
           ← Dashboard
@@ -329,7 +342,9 @@ function AdminUsers() {
               placeholder="Search customers..."
               value={search}
               onChange={(e) =>
-                setSearch(e.target.value)
+                setSearch(
+                  e.target.value
+                )
               }
             />
 
@@ -403,96 +418,103 @@ function AdminUsers() {
 
             {/* TABLE ROWS */}
 
-            {filteredUsers.map((user) => (
+            {filteredUsers.map(
+              (user) => (
 
-              <div
-                className="admin-users-row"
-                key={user._id}
-              >
+                <div
+                  className="admin-users-row"
+                  key={user._id}
+                >
 
-                {/* CUSTOMER */}
+                  {/* CUSTOMER */}
 
-                <div className="admin-user-info">
+                  <div className="admin-user-info">
 
-                  <div className="admin-user-avatar">
-                    {user.name
-                      ?.charAt(0)
-                      ?.toUpperCase() || "U"}
+                    <div className="admin-user-avatar">
+                      {user.name
+                        ?.charAt(0)
+                        ?.toUpperCase() ||
+                        "U"}
+                    </div>
+
+                    <div className="admin-user-details">
+
+                      <strong>
+                        {user.name ||
+                          "Unknown User"}
+                      </strong>
+
+                      <span>
+                        Customer
+                      </span>
+
+                    </div>
+
                   </div>
 
-                  <div className="admin-user-details">
+                  {/* EMAIL */}
 
-                    <strong>
-                      {user.name ||
-                        "Unknown User"}
-                    </strong>
+                  <span className="admin-user-email">
+                    {user.email ||
+                      "Not provided"}
+                  </span>
 
-                    <span>
-                      Customer
-                    </span>
+                  {/* PHONE */}
+
+                  <span className="admin-user-phone">
+                    {user.phone
+                      ? user.phone
+                      : "Not provided"}
+                  </span>
+
+                  {/* ORDERS */}
+
+                  <span className="admin-user-orders">
+                    {user.totalOrders ||
+                      0}
+                  </span>
+
+                  {/* JOINED */}
+
+                  <span className="admin-user-date">
+
+                    {user.createdAt
+                      ? new Date(
+                          user.createdAt
+                        ).toLocaleDateString(
+                          "en-IN",
+                          {
+                            day: "2-digit",
+                            month: "short",
+                            year: "numeric",
+                          }
+                        )
+                      : "N/A"}
+
+                  </span>
+
+                  {/* ACTION */}
+
+                  <div className="admin-user-action">
+
+                    <button
+                      type="button"
+                      className="admin-user-view"
+                      onClick={() =>
+                        handleViewDetails(
+                          user
+                        )
+                      }
+                    >
+                      View Details
+                    </button>
 
                   </div>
 
                 </div>
 
-                {/* EMAIL */}
-
-                <span className="admin-user-email">
-                  {user.email ||
-                    "Not provided"}
-                </span>
-
-                {/* PHONE */}
-
-                <span className="admin-user-phone">
-                  {user.phone
-                    ? user.phone
-                    : "Not provided"}
-                </span>
-
-                {/* ORDERS */}
-
-                <span className="admin-user-orders">
-                  {user.totalOrders || 0}
-                </span>
-
-                {/* JOINED */}
-
-                <span className="admin-user-date">
-
-                  {user.createdAt
-                    ? new Date(
-                        user.createdAt
-                      ).toLocaleDateString(
-                        "en-IN",
-                        {
-                          day: "2-digit",
-                          month: "short",
-                          year: "numeric",
-                        }
-                      )
-                    : "N/A"}
-
-                </span>
-
-                {/* ACTION */}
-
-                <div className="admin-user-action">
-
-                  <button
-                    className="admin-user-view"
-                    onClick={() =>
-                      handleViewDetails(user)
-                    }
-                  >
-                    View Details
-                  </button>
-
-                </div>
-
-              </div>
-
-            ))}
+              )
+            )}
 
           </div>
 
@@ -535,6 +557,7 @@ function AdminUsers() {
               </div>
 
               <button
+                type="button"
                 className="admin-user-modal-close"
                 onClick={closeUserModal}
                 aria-label="Close"
@@ -552,7 +575,8 @@ function AdminUsers() {
 
                 {selectedUser.name
                   ?.charAt(0)
-                  ?.toUpperCase() || "U"}
+                  ?.toUpperCase() ||
+                  "U"}
 
               </div>
 
@@ -622,7 +646,8 @@ function AdminUsers() {
                 </span>
 
                 <strong>
-                  {selectedUser.totalOrders || 0}
+                  {selectedUser.totalOrders ||
+                    0}
                 </strong>
 
               </div>
@@ -634,9 +659,13 @@ function AdminUsers() {
                 </span>
 
                 <strong>
-                  ₹{Number(
-                    selectedUser.totalSpent || 0
-                  ).toLocaleString("en-IN")}
+                  ₹
+                  {Number(
+                    selectedUser.totalSpent ||
+                      0
+                  ).toLocaleString(
+                    "en-IN"
+                  )}
                 </strong>
 
               </div>
@@ -686,6 +715,7 @@ function AdminUsers() {
             <div className="admin-user-modal-footer">
 
               <button
+                type="button"
                 onClick={closeUserModal}
               >
                 Close
@@ -704,3 +734,4 @@ function AdminUsers() {
 }
 
 export default AdminUsers;
+

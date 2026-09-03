@@ -1,14 +1,31 @@
 import express from "express";
+import rateLimit from "express-rate-limit";
 import { sendEmail } from "../utils/sendEmail.js";
 
 const router = express.Router();
 
 
 // =========================================
+// CONTACT FORM RATE LIMITER
+// =========================================
+
+const contactLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 5, // Maximum 5 requests
+  message: {
+    message:
+      "Too many contact requests. Please try again later.",
+  },
+  standardHeaders: true,
+  legacyHeaders: false,
+});
+
+
+// =========================================
 // SEND CONTACT MESSAGE
 // =========================================
 
-router.post("/", async (req, res) => {
+router.post("/", contactLimiter, async (req, res) => {
 
   try {
 

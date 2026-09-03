@@ -1,4 +1,3 @@
-
 import {
   useEffect,
   useState,
@@ -6,10 +5,9 @@ import {
 
 import { useNavigate } from "react-router-dom";
 
-import axios from "axios";
+import apiClient from "../services/apiClient";
 
 import {
-  API_BASE_URL,
   SERVER_BASE_URL,
 } from "../config/api";
 
@@ -101,11 +99,18 @@ function AdminProducts() {
       return "";
     }
 
-    if (image.startsWith("http")) {
+    if (
+      image.startsWith("http://") ||
+      image.startsWith("https://")
+    ) {
       return image;
     }
 
-    return `${SERVER_BASE_URL}${image}`;
+    if (image.startsWith("/")) {
+      return `${SERVER_BASE_URL}${image}`;
+    }
+
+    return `${SERVER_BASE_URL}/images/${image}`;
 
   };
 
@@ -141,14 +146,8 @@ function AdminProducts() {
 
 
         const response =
-          await axios.get(
-            `${API_BASE_URL}/admin/products`,
-            {
-              headers: {
-                Authorization:
-                  `Bearer ${token}`,
-              },
-            }
+          await apiClient.get(
+            "/admin/products"
           );
 
 
@@ -189,7 +188,6 @@ function AdminProducts() {
           error.response?.data?.message ||
           "Unable to load products."
         );
-
 
       } finally {
 
@@ -382,18 +380,11 @@ function AdminProducts() {
       if (editingProduct) {
 
         const response =
-          await axios.put(
+          await apiClient.put(
 
-            `${API_BASE_URL}/admin/products/${editingProduct._id}`,
+            `/admin/products/${editingProduct._id}`,
 
-            productData,
-
-            {
-              headers: {
-                Authorization:
-                  `Bearer ${token}`,
-              },
-            }
+            productData
 
           );
 
@@ -421,18 +412,11 @@ function AdminProducts() {
       else {
 
         const response =
-          await axios.post(
+          await apiClient.post(
 
-            `${API_BASE_URL}/admin/products`,
+            "/admin/products",
 
-            productData,
-
-            {
-              headers: {
-                Authorization:
-                  `Bearer ${token}`,
-              },
-            }
+            productData
 
           );
 
@@ -456,6 +440,26 @@ function AdminProducts() {
         "Save Product Error:",
         error
       );
+
+
+      if (
+        error.response?.status === 401 ||
+        error.response?.status === 403
+      ) {
+
+        localStorage.removeItem(
+          "glowryAdminToken"
+        );
+
+        localStorage.removeItem(
+          "glowryAdminUser"
+        );
+
+        navigate("/admin/login");
+
+        return;
+
+      }
 
 
       alert(
@@ -515,16 +519,9 @@ function AdminProducts() {
       }
 
 
-      await axios.delete(
+      await apiClient.delete(
 
-        `${API_BASE_URL}/admin/products/${deleteProduct._id}`,
-
-        {
-          headers: {
-            Authorization:
-              `Bearer ${token}`,
-          },
-        }
+        `/admin/products/${deleteProduct._id}`
 
       );
 
@@ -548,6 +545,26 @@ function AdminProducts() {
         "Delete Product Error:",
         error
       );
+
+
+      if (
+        error.response?.status === 401 ||
+        error.response?.status === 403
+      ) {
+
+        localStorage.removeItem(
+          "glowryAdminToken"
+        );
+
+        localStorage.removeItem(
+          "glowryAdminUser"
+        );
+
+        navigate("/admin/login");
+
+        return;
+
+      }
 
 
       alert(
@@ -1320,4 +1337,3 @@ function AdminProducts() {
 
 
 export default AdminProducts;
-

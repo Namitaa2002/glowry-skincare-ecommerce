@@ -1,9 +1,11 @@
 
-import { useEffect, useState } from "react";
+import {
+  useEffect,
+  useState,
+} from "react";
 import { useNavigate } from "react-router-dom";
-import axios from "axios";
 
-import { API_BASE_URL } from "../config/api";
+import apiClient from "../services/apiClient";
 
 import {
   LayoutDashboard,
@@ -19,30 +21,30 @@ import {
   XCircle,
 } from "lucide-react";
 
-
 // =========================================
 // GET ADMIN DATA
 // =========================================
 
 const getInitialAdmin = () => {
-
   const adminToken =
-    localStorage.getItem("glowryAdminToken");
+    localStorage.getItem(
+      "glowryAdminToken"
+    );
 
   const adminUser =
-    localStorage.getItem("glowryAdminUser");
+    localStorage.getItem(
+      "glowryAdminUser"
+    );
 
   if (!adminToken || !adminUser) {
     return null;
   }
 
   try {
-
     const parsedAdmin =
       JSON.parse(adminUser);
 
     if (parsedAdmin.role !== "admin") {
-
       localStorage.removeItem(
         "glowryAdminToken"
       );
@@ -55,9 +57,7 @@ const getInitialAdmin = () => {
     }
 
     return parsedAdmin;
-
   } catch {
-
     localStorage.removeItem(
       "glowryAdminToken"
     );
@@ -70,13 +70,11 @@ const getInitialAdmin = () => {
   }
 };
 
-
 // =========================================
 // ADMIN DASHBOARD
 // =========================================
 
 function AdminDashboard() {
-
   const navigate = useNavigate();
 
   // =========================================
@@ -99,16 +97,16 @@ function AdminDashboard() {
   const [loading, setLoading] =
     useState(true);
 
-  const [showLogoutModal, setShowLogoutModal] =
-    useState(false);
-
+  const [
+    showLogoutModal,
+    setShowLogoutModal,
+  ] = useState(false);
 
   // =========================================
   // ADMIN AUTH CHECK
   // =========================================
 
   useEffect(() => {
-
     const adminToken =
       localStorage.getItem(
         "glowryAdminToken"
@@ -119,15 +117,16 @@ function AdminDashboard() {
         "glowryAdminUser"
       );
 
-    if (!adminToken || !adminUser || !admin) {
-
+    if (
+      !adminToken ||
+      !adminUser ||
+      !admin
+    ) {
       navigate("/admin/login");
-
       return;
     }
 
     if (admin.role !== "admin") {
-
       localStorage.removeItem(
         "glowryAdminToken"
       );
@@ -138,89 +137,75 @@ function AdminDashboard() {
 
       navigate("/admin/login");
     }
-
   }, [admin, navigate]);
-
 
   // =========================================
   // FETCH DASHBOARD DATA
   // =========================================
 
   useEffect(() => {
+    const fetchDashboardData =
+      async () => {
+        try {
+          const adminToken =
+            localStorage.getItem(
+              "glowryAdminToken"
+            );
 
-    const fetchDashboardData = async () => {
+          if (!adminToken) {
+            return;
+          }
 
-      try {
+          // =================================
+          // API CLIENT
+          // Authorization token is
+          // automatically attached by
+          // the axios interceptor.
+          // =================================
 
-        const token =
-          localStorage.getItem(
-            "glowryAdminToken"
+          const response =
+            await apiClient.get(
+              "/admin/dashboard"
+            );
+
+          const data =
+            response.data;
+
+          setStats({
+            totalUsers:
+              data.totalUsers || 0,
+
+            totalProducts:
+              data.totalProducts || 0,
+
+            totalOrders:
+              data.totalOrders || 0,
+
+            totalRevenue:
+              data.totalRevenue || 0,
+          });
+
+          setRecentOrders(
+            data.recentOrders || []
           );
-
-        if (!token) {
-          return;
+        } catch (error) {
+          console.error(
+            "Admin Dashboard Error:",
+            error
+          );
+        } finally {
+          setLoading(false);
         }
-
-        const response =
-          await axios.get(
-            `${API_BASE_URL}/admin/dashboard`,
-            {
-              headers: {
-                Authorization:
-                  `Bearer ${token}`,
-              },
-            }
-          );
-
-        const data =
-          response.data;
-
-        setStats({
-
-          totalUsers:
-            data.totalUsers || 0,
-
-          totalProducts:
-            data.totalProducts || 0,
-
-          totalOrders:
-            data.totalOrders || 0,
-
-          totalRevenue:
-            data.totalRevenue || 0,
-
-        });
-
-        setRecentOrders(
-          data.recentOrders || []
-        );
-
-      } catch (error) {
-
-        console.error(
-          "Admin Dashboard Error:",
-          error
-        );
-
-      } finally {
-
-        setLoading(false);
-
-      }
-
-    };
+      };
 
     fetchDashboardData();
-
   }, []);
-
 
   // =========================================
   // LOGOUT
   // =========================================
 
   const handleLogout = () => {
-
     localStorage.removeItem(
       "glowryAdminToken"
     );
@@ -232,46 +217,47 @@ function AdminDashboard() {
     setShowLogoutModal(false);
 
     navigate("/admin/login");
-
   };
-
 
   // =========================================
   // STATUS ICON
   // =========================================
 
   const getStatusIcon = (status) => {
-
     switch (status) {
-
       case "Delivered":
-        return <CheckCircle2 size={16} />;
+        return (
+          <CheckCircle2 size={16} />
+        );
 
       case "Shipped":
-        return <Truck size={16} />;
+        return (
+          <Truck size={16} />
+        );
 
       case "Cancelled":
-        return <XCircle size={16} />;
+        return (
+          <XCircle size={16} />
+        );
 
       case "Confirmed":
-        return <CheckCircle2 size={16} />;
+        return (
+          <CheckCircle2 size={16} />
+        );
 
       default:
-        return <Clock3 size={16} />;
-
+        return (
+          <Clock3 size={16} />
+        );
     }
-
   };
-
 
   // =========================================
   // STATUS CLASS
   // =========================================
 
   const getStatusClass = (status) => {
-
     switch (status) {
-
       case "Delivered":
         return "status-delivered";
 
@@ -286,54 +272,39 @@ function AdminDashboard() {
 
       default:
         return "status-processing";
-
     }
-
   };
-
 
   // =========================================
   // LOADING
   // =========================================
 
   if (loading) {
-
     return (
-
       <main className="admin-dashboard-page">
-
         <div className="admin-loading">
-
           <div className="admin-loading-spinner"></div>
 
           <p>
             Loading GLOWRY Admin...
           </p>
-
         </div>
-
       </main>
-
     );
-
   }
-
 
   // =========================================
   // DASHBOARD
   // =========================================
 
   return (
-
     <main className="admin-dashboard-page">
-
 
       {/* =====================================
           SIDEBAR
       ===================================== */}
 
       <aside className="admin-sidebar">
-
 
         <div className="admin-brand">
 
@@ -342,7 +313,6 @@ function AdminDashboard() {
           </div>
 
           <div>
-
             <h2>
               GLOWRY
             </h2>
@@ -350,11 +320,9 @@ function AdminDashboard() {
             <span>
               ADMIN PANEL
             </span>
-
           </div>
 
         </div>
-
 
         {/* NAVIGATION */}
 
@@ -366,71 +334,68 @@ function AdminDashboard() {
               OVERVIEW
             </p>
 
-
             <button
               className="admin-nav-item active"
             >
-
-              <LayoutDashboard size={18} />
+              <LayoutDashboard
+                size={18}
+              />
 
               <span>
                 Dashboard
               </span>
-
             </button>
-
 
             <button
               className="admin-nav-item"
               onClick={() =>
-                navigate("/admin/products")
+                navigate(
+                  "/admin/products"
+                )
               }
             >
-
               <Package size={18} />
 
               <span>
                 Products
               </span>
-
             </button>
-
 
             <button
               className="admin-nav-item"
               onClick={() =>
-                navigate("/admin/orders")
+                navigate(
+                  "/admin/orders"
+                )
               }
             >
-
-              <ShoppingBag size={18} />
+              <ShoppingBag
+                size={18}
+              />
 
               <span>
                 Orders
               </span>
-
             </button>
-
 
             <button
               className="admin-nav-item"
               onClick={() =>
-                navigate("/admin/users")
+                navigate(
+                  "/admin/users"
+                )
               }
             >
-
               <Users size={18} />
 
               <span>
                 Customers
               </span>
-
             </button>
 
           </div>
 
         </nav>
-
 
         {/* SIDEBAR BOTTOM */}
 
@@ -439,13 +404,15 @@ function AdminDashboard() {
           <div className="admin-sidebar-user">
 
             <div className="admin-avatar">
-              {admin?.name?.charAt(0) || "A"}
+              {admin?.name?.charAt(0) ||
+                "A"}
             </div>
 
             <div>
 
               <strong>
-                {admin?.name || "Admin"}
+                {admin?.name ||
+                  "Admin"}
               </strong>
 
               <span>
@@ -456,31 +423,28 @@ function AdminDashboard() {
 
           </div>
 
-
           <button
             className="admin-logout-button"
             onClick={() =>
-              setShowLogoutModal(true)
+              setShowLogoutModal(
+                true
+              )
             }
           >
-
             <LogOut size={17} />
 
             Logout
-
           </button>
 
         </div>
 
       </aside>
 
-
       {/* =====================================
           MAIN CONTENT
       ===================================== */}
 
       <section className="admin-main-content">
-
 
         {/* TOP HEADER */}
 
@@ -498,17 +462,18 @@ function AdminDashboard() {
 
           </div>
 
-
           <div className="admin-topbar-user">
 
             <div className="admin-topbar-avatar">
-              {admin?.name?.charAt(0) || "A"}
+              {admin?.name?.charAt(0) ||
+                "A"}
             </div>
 
             <div>
 
               <strong>
-                {admin?.name || "Admin"}
+                {admin?.name ||
+                  "Admin"}
               </strong>
 
               <span>
@@ -521,7 +486,6 @@ function AdminDashboard() {
 
         </header>
 
-
         {/* WELCOME */}
 
         <section className="admin-welcome-card">
@@ -533,16 +497,19 @@ function AdminDashboard() {
             </span>
 
             <h2>
-              Hello, {admin?.name || "Admin"} 👋
+              Hello,{" "}
+              {admin?.name ||
+                "Admin"}{" "}
+              👋
             </h2>
 
             <p>
-              Here's what's happening with your
-              GLOWRY store today.
+              Here's what's happening
+              with your GLOWRY store
+              today.
             </p>
 
           </div>
-
 
           <div className="admin-welcome-decoration">
             ✦
@@ -550,13 +517,11 @@ function AdminDashboard() {
 
         </section>
 
-
         {/* =====================================
             STAT CARDS
         ===================================== */}
 
         <section className="admin-stats-grid">
-
 
           {/* USERS */}
 
@@ -589,7 +554,6 @@ function AdminDashboard() {
 
           </article>
 
-
           {/* PRODUCTS */}
 
           <article className="admin-stat-card">
@@ -620,7 +584,6 @@ function AdminDashboard() {
             />
 
           </article>
-
 
           {/* ORDERS */}
 
@@ -653,7 +616,6 @@ function AdminDashboard() {
 
           </article>
 
-
           {/* REVENUE */}
 
           <article className="admin-stat-card">
@@ -669,9 +631,12 @@ function AdminDashboard() {
               </span>
 
               <h2>
-                ₹{Number(
+                ₹
+                {Number(
                   stats.totalRevenue
-                ).toLocaleString("en-IN")}
+                ).toLocaleString(
+                  "en-IN"
+                )}
               </h2>
 
               <small>
@@ -689,13 +654,11 @@ function AdminDashboard() {
 
         </section>
 
-
         {/* =====================================
             RECENT ORDERS
         ===================================== */}
 
         <section className="admin-orders-card">
-
 
           <div className="admin-section-header">
 
@@ -711,10 +674,11 @@ function AdminDashboard() {
 
             </div>
 
-
             <button
               onClick={() =>
-                navigate("/admin/orders")
+                navigate(
+                  "/admin/orders"
+                )
               }
               className="admin-view-all"
             >
@@ -723,26 +687,25 @@ function AdminDashboard() {
 
           </div>
 
-
-          {recentOrders.length === 0 ? (
-
+          {recentOrders.length ===
+          0 ? (
             <div className="admin-empty-orders">
 
-              <ShoppingBag size={34} />
+              <ShoppingBag
+                size={34}
+              />
 
               <h3>
                 No Orders Yet
               </h3>
 
               <p>
-                New customer orders will appear
-                here.
+                New customer orders
+                will appear here.
               </p>
 
             </div>
-
           ) : (
-
             <div className="admin-orders-table">
 
               <div className="admin-table-header">
@@ -769,10 +732,8 @@ function AdminDashboard() {
 
               </div>
 
-
               {recentOrders.map(
                 (order) => (
-
                   <div
                     className="admin-table-row"
                     key={order._id}
@@ -783,8 +744,10 @@ function AdminDashboard() {
                     </strong>
 
                     <span>
-                      {order.customer?.fullName ||
-                        order.customer?.name ||
+                      {order.customer
+                        ?.fullName ||
+                        order.customer
+                          ?.name ||
                         "Customer"}
                     </span>
 
@@ -796,17 +759,23 @@ function AdminDashboard() {
                             "en-IN",
                             {
                               day: "2-digit",
-                              month: "short",
-                              year: "numeric",
+                              month:
+                                "short",
+                              year:
+                                "numeric",
                             }
                           )
                         : "N/A"}
                     </span>
 
                     <strong>
-                      ₹{Number(
-                        order.total || 0
-                      ).toLocaleString("en-IN")}
+                      ₹
+                      {Number(
+                        order.total ||
+                          0
+                      ).toLocaleString(
+                        "en-IN"
+                      )}
                     </strong>
 
                     <span
@@ -825,16 +794,13 @@ function AdminDashboard() {
                     </span>
 
                   </div>
-
                 )
               )}
 
             </div>
-
           )}
 
         </section>
-
 
         {/* =====================================
             QUICK ACTIONS
@@ -858,13 +824,13 @@ function AdminDashboard() {
 
           </div>
 
-
           <div className="admin-quick-grid">
-
 
             <button
               onClick={() =>
-                navigate("/admin/products")
+                navigate(
+                  "/admin/products"
+                )
               }
               className="admin-quick-card"
             >
@@ -878,24 +844,30 @@ function AdminDashboard() {
                 </strong>
 
                 <span>
-                  Add, edit or remove products
+                  Add, edit or remove
+                  products
                 </span>
 
               </div>
 
-              <ArrowUpRight size={18} />
+              <ArrowUpRight
+                size={18}
+              />
 
             </button>
 
-
             <button
               onClick={() =>
-                navigate("/admin/orders")
+                navigate(
+                  "/admin/orders"
+                )
               }
               className="admin-quick-card"
             >
 
-              <ShoppingBag size={22} />
+              <ShoppingBag
+                size={22}
+              />
 
               <div>
 
@@ -904,19 +876,23 @@ function AdminDashboard() {
                 </strong>
 
                 <span>
-                  View and update orders
+                  View and update
+                  orders
                 </span>
 
               </div>
 
-              <ArrowUpRight size={18} />
+              <ArrowUpRight
+                size={18}
+              />
 
             </button>
 
-
             <button
               onClick={() =>
-                navigate("/admin/users")
+                navigate(
+                  "/admin/users"
+                )
               }
               className="admin-quick-card"
             >
@@ -930,12 +906,15 @@ function AdminDashboard() {
                 </strong>
 
                 <span>
-                  View registered customers
+                  View registered
+                  customers
                 </span>
 
               </div>
 
-              <ArrowUpRight size={18} />
+              <ArrowUpRight
+                size={18}
+              />
 
             </button>
 
@@ -943,17 +922,17 @@ function AdminDashboard() {
 
         </section>
 
-
         {/* =====================================
             LOGOUT CONFIRMATION MODAL
         ===================================== */}
 
         {showLogoutModal && (
-
           <div
             className="admin-logout-overlay"
             onClick={() =>
-              setShowLogoutModal(false)
+              setShowLogoutModal(
+                false
+              )
             }
           >
 
@@ -965,22 +944,18 @@ function AdminDashboard() {
             >
 
               <div className="admin-logout-icon">
-
                 <LogOut size={24} />
-
               </div>
-
 
               <h2>
                 Are you sure?
               </h2>
 
-
               <p>
-                Do you really want to logout
-                from the GLOWRY Admin Panel?
+                Do you really want to
+                logout from the GLOWRY
+                Admin Panel?
               </p>
-
 
               <div className="admin-logout-actions">
 
@@ -988,12 +963,13 @@ function AdminDashboard() {
                   type="button"
                   className="admin-cancel-logout"
                   onClick={() =>
-                    setShowLogoutModal(false)
+                    setShowLogoutModal(
+                      false
+                    )
                   }
                 >
                   Cancel
                 </button>
-
 
                 <button
                   type="button"
@@ -1012,18 +988,13 @@ function AdminDashboard() {
             </div>
 
           </div>
-
         )}
-
 
       </section>
 
     </main>
-
   );
-
 }
-
 
 export default AdminDashboard;
 

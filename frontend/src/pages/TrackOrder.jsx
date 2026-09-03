@@ -10,12 +10,11 @@ import {
   useState,
 } from "react";
 
-import axios from "axios";
+import apiClient from "../services/apiClient";
 
 import {
-  API_BASE_URL,
+  SERVER_BASE_URL,
 } from "../config/api";
-
 
 function TrackOrder() {
 
@@ -26,6 +25,26 @@ function TrackOrder() {
   const navigate =
     useNavigate();
 
+  const getImageUrl = (image) => {
+
+    if (!image) {
+      return "";
+    }
+
+    if (
+      image.startsWith("http://") ||
+      image.startsWith("https://")
+    ) {
+      return image;
+    }
+
+    if (image.startsWith("/")) {
+      return `${SERVER_BASE_URL}${image}`;
+    }
+
+    return `${SERVER_BASE_URL}/images/${image}`;
+
+  };
 
   // =========================================
   // ORDER STATE
@@ -34,7 +53,6 @@ function TrackOrder() {
   const [order, setOrder] =
     useState(null);
 
-
   // =========================================
   // LOADING
   // =========================================
@@ -42,14 +60,12 @@ function TrackOrder() {
   const [loading, setLoading] =
     useState(true);
 
-
   // =========================================
   // ERROR
   // =========================================
 
   const [error, setError] =
     useState("");
-
 
   // =========================================
   // FETCH ORDER
@@ -65,7 +81,6 @@ function TrackOrder() {
 
         setError("");
 
-
         // =====================================
         // CHECK LOGGED IN USER
         // =====================================
@@ -75,7 +90,6 @@ function TrackOrder() {
             "glowryLoggedInUser"
           );
 
-
         if (!savedUser) {
 
           navigate("/login");
@@ -83,7 +97,6 @@ function TrackOrder() {
           return;
 
         }
-
 
         // =====================================
         // GET TOKEN
@@ -94,7 +107,6 @@ function TrackOrder() {
             "glowryToken"
           );
 
-
         if (!token) {
 
           setError(
@@ -104,7 +116,6 @@ function TrackOrder() {
           return;
 
         }
-
 
         // =====================================
         // CHECK ORDER ID
@@ -120,71 +131,25 @@ function TrackOrder() {
 
         }
 
-
-        console.log(
-          "Fetching Order:",
-          orderId
-        );
-
-
         // =====================================
         // FETCH ORDER FROM BACKEND
         // =====================================
 
         const response =
-          await axios.get(
-
-            `${API_BASE_URL}/orders/${orderId}`,
-
-            {
-              headers: {
-
-                Authorization:
-                  `Bearer ${token}`,
-
-              },
-
-            }
-
+          await apiClient.get(
+            `/orders/details/${orderId}`
           );
-
-
-        console.log(
-          "Track Order Response:",
-          response.data
-        );
-
 
         setOrder(
           response.data
         );
 
-
       } catch (error) {
-
-        console.error(
-          "================================="
-        );
 
         console.error(
           "Track Order Error:",
           error
         );
-
-        console.error(
-          "STATUS:",
-          error.response?.status
-        );
-
-        console.error(
-          "BACKEND RESPONSE:",
-          error.response?.data
-        );
-
-        console.error(
-          "================================="
-        );
-
 
         // =====================================
         // TOKEN / AUTH ERROR
@@ -202,16 +167,13 @@ function TrackOrder() {
             "glowryLoggedInUser"
           );
 
-
           setError(
             "Your session has expired. Please login again."
           );
 
-
           return;
 
         }
-
 
         // =====================================
         // ORDER NOT FOUND
@@ -225,11 +187,9 @@ function TrackOrder() {
             "Order not found. Please check the order ID."
           );
 
-
           return;
 
         }
-
 
         // =====================================
         // ACCESS DENIED
@@ -243,11 +203,9 @@ function TrackOrder() {
             "You are not authorized to view this order."
           );
 
-
           return;
 
         }
-
 
         // =====================================
         // OTHER ERROR
@@ -269,15 +227,12 @@ function TrackOrder() {
 
     };
 
-
     fetchOrder();
-
 
   }, [
     orderId,
     navigate,
   ]);
-
 
   // =========================================
   // LOADING
@@ -295,11 +250,9 @@ function TrackOrder() {
             GLOWRY DELIVERY
           </p>
 
-
           <h1>
             Track Your Order
           </h1>
-
 
           <p>
             Checking your order status...
@@ -307,13 +260,11 @@ function TrackOrder() {
 
         </section>
 
-
         <section className="track-order-box">
 
           <div className="track-loading-icon">
             📦
           </div>
-
 
           <h2>
             Loading Order...
@@ -326,7 +277,6 @@ function TrackOrder() {
     );
 
   }
-
 
   // =========================================
   // ERROR
@@ -344,13 +294,11 @@ function TrackOrder() {
             GLOWRY DELIVERY
           </p>
 
-
           <h1>
             Track Your Order
           </h1>
 
         </section>
-
 
         <section className="track-order-box">
 
@@ -358,16 +306,13 @@ function TrackOrder() {
             ⚠
           </div>
 
-
           <h2>
             Order Not Found
           </h2>
 
-
           <p>
             {error}
           </p>
-
 
           <div
             style={{
@@ -385,7 +330,6 @@ function TrackOrder() {
             >
               ← Back to My Orders
             </Link>
-
 
             {error.includes(
               "login"
@@ -410,7 +354,6 @@ function TrackOrder() {
 
   }
 
-
   // =========================================
   // STATUS
   // =========================================
@@ -418,7 +361,6 @@ function TrackOrder() {
   const status =
     order?.status ||
     "Processing";
-
 
   const statuses = [
 
@@ -434,7 +376,6 @@ function TrackOrder() {
 
   ];
 
-
   // =========================================
   // STATUS INDEX
   // =========================================
@@ -443,7 +384,6 @@ function TrackOrder() {
     statuses.indexOf(
       status
     );
-
 
   /*
     Backend currently creates orders
@@ -459,7 +399,6 @@ function TrackOrder() {
 
   }
 
-
   // =========================================
   // CANCELLED
   // =========================================
@@ -472,18 +411,15 @@ function TrackOrder() {
 
       <main className="track-order-page">
 
-
         <section className="track-order-header">
 
           <p className="section-small-title">
             GLOWRY DELIVERY
           </p>
 
-
           <h1>
             Track Your Order
           </h1>
-
 
           <p>
             Order #{order.orderId}
@@ -491,24 +427,20 @@ function TrackOrder() {
 
         </section>
 
-
         <section className="track-order-box">
 
           <div className="track-cancelled-icon">
             ✕
           </div>
 
-
           <h2>
             Order Cancelled
           </h2>
-
 
           <p>
             Unfortunately, this order has been
             cancelled.
           </p>
-
 
           <Link
             to="/my-orders"
@@ -525,7 +457,6 @@ function TrackOrder() {
 
   }
 
-
   // =========================================
   // TRACKING PAGE
   // =========================================
@@ -533,7 +464,6 @@ function TrackOrder() {
   return (
 
     <main className="track-order-page">
-
 
       {/* =====================================
           HEADER
@@ -545,11 +475,9 @@ function TrackOrder() {
           GLOWRY DELIVERY
         </p>
 
-
         <h1>
           Track Your Order
         </h1>
-
 
         <p>
           Order #{order.orderId}
@@ -557,20 +485,17 @@ function TrackOrder() {
 
       </section>
 
-
       {/* =====================================
           ORDER SUMMARY
       ===================================== */}
 
       <section className="track-order-summary">
 
-
         <div>
 
           <span>
             Order Date
           </span>
-
 
           <strong>
 
@@ -593,13 +518,11 @@ function TrackOrder() {
 
         </div>
 
-
         <div>
 
           <span>
             Payment
           </span>
-
 
           <strong>
 
@@ -614,13 +537,11 @@ function TrackOrder() {
 
         </div>
 
-
         <div>
 
           <span>
             Total Amount
           </span>
-
 
           <strong>
 
@@ -637,13 +558,11 @@ function TrackOrder() {
 
       </section>
 
-
       {/* =====================================
           CURRENT STATUS
       ===================================== */}
 
       <section className="track-current-status">
-
 
         <div className="track-status-icon">
 
@@ -655,18 +574,15 @@ function TrackOrder() {
 
         </div>
 
-
         <div>
 
           <span>
             CURRENT STATUS
           </span>
 
-
           <h2>
             {status}
           </h2>
-
 
           <p>
 
@@ -694,33 +610,26 @@ function TrackOrder() {
 
       </section>
 
-
       {/* =====================================
           ORDER TIMELINE
       ===================================== */}
 
       <section className="tracking-timeline">
 
-
         <h2>
           Order Progress
         </h2>
 
-
         <div className="timeline">
-
 
           {statuses.map(
             (item, index) => {
 
-
               const completed =
                 statusIndex >= index;
 
-
               const current =
                 status === item;
-
 
               return (
 
@@ -737,7 +646,6 @@ function TrackOrder() {
                   key={item}
                 >
 
-
                   <div className="timeline-icon">
 
                     {completed
@@ -748,14 +656,11 @@ function TrackOrder() {
 
                   </div>
 
-
                   <div className="timeline-content">
-
 
                     <h3>
                       {item}
                     </h3>
-
 
                     <p>
 
@@ -763,21 +668,17 @@ function TrackOrder() {
                         "Pending" &&
                         "Your order has been placed."}
 
-
                       {item ===
                         "Confirmed" &&
                         "Your order has been confirmed."}
-
 
                       {item ===
                         "Processing" &&
                         "Your order is being processed and prepared."}
 
-
                       {item ===
                         "Shipped" &&
                         "Your order has been shipped."}
-
 
                       {item ===
                         "Delivered" &&
@@ -786,7 +687,6 @@ function TrackOrder() {
                     </p>
 
                   </div>
-
 
                   {index <
                     statuses.length - 1 && (
@@ -806,18 +706,15 @@ function TrackOrder() {
 
       </section>
 
-
       {/* =====================================
           PRODUCTS
       ===================================== */}
 
       <section className="track-products">
 
-
         <h2>
           Order Items
         </h2>
-
 
         {(order.items || []).map(
           (item, index) => (
@@ -831,13 +728,14 @@ function TrackOrder() {
               }
             >
 
-
               <div className="track-product-image">
 
                 {item.image ? (
 
                   <img
-                    src={item.image}
+                    src={getImageUrl(
+                      item.image
+                    )}
                     alt={
                       item.name ||
                       "Product"
@@ -854,7 +752,6 @@ function TrackOrder() {
 
               </div>
 
-
               <div className="track-product-info">
 
                 <h3>
@@ -862,13 +759,11 @@ function TrackOrder() {
                     "Product"}
                 </h3>
 
-
                 <p>
                   Quantity: {item.quantity}
                 </p>
 
               </div>
-
 
               <strong>
 
@@ -893,7 +788,6 @@ function TrackOrder() {
 
       </section>
 
-
       {/* =====================================
           DELIVERY ADDRESS
       ===================================== */}
@@ -902,11 +796,9 @@ function TrackOrder() {
 
         <section className="track-address">
 
-
           <h2>
             Delivery Address
           </h2>
-
 
           <p>
 
@@ -920,11 +812,9 @@ function TrackOrder() {
 
           </p>
 
-
           <p>
             {order.customer.address}
           </p>
-
 
           <p>
 
@@ -934,14 +824,12 @@ function TrackOrder() {
 
           </p>
 
-
           <p>
 
             PIN:{" "}
             {order.customer.pincode}
 
           </p>
-
 
           <p>
 
@@ -953,7 +841,6 @@ function TrackOrder() {
         </section>
 
       )}
-
 
       {/* =====================================
           BACK
@@ -970,13 +857,11 @@ function TrackOrder() {
 
       </div>
 
-
     </main>
 
   );
 
 }
-
 
 export default TrackOrder;
 

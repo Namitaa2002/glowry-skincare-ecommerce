@@ -32,7 +32,7 @@ router.get(
         })
           .populate(
             "user",
-            "name email"
+            "name"
           )
           .sort({
             createdAt: -1,

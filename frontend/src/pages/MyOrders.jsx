@@ -1,3 +1,4 @@
+
 import {
   Link,
   useNavigate,
@@ -8,13 +9,36 @@ import {
   useState,
 } from "react";
 
-import axios from "axios";
+import apiClient from "../services/apiClient";
 
-import { API_BASE_URL } from "../config/api";
+import {
+  SERVER_BASE_URL,
+} from "../config/api";
 
 function MyOrders() {
 
   const navigate = useNavigate();
+
+  const getImageUrl = (image) => {
+
+    if (!image) {
+      return "";
+    }
+
+    if (
+      image.startsWith("http://") ||
+      image.startsWith("https://")
+    ) {
+      return image;
+    }
+
+    if (image.startsWith("/")) {
+      return `${SERVER_BASE_URL}${image}`;
+    }
+
+    return `${SERVER_BASE_URL}/images/${image}`;
+
+  };
 
   // =========================================
   // ORDERS
@@ -116,16 +140,6 @@ function MyOrders() {
             "glowryToken"
           );
 
-        console.log(
-          "Logged In User:",
-          user
-        );
-
-        console.log(
-          "Glowry Token:",
-          token
-        );
-
         // =====================================
         // CHECK TOKEN
         // =====================================
@@ -145,19 +159,10 @@ function MyOrders() {
         // FETCH USER ORDERS
         // =====================================
 
-        const response = await axios.get(
-          `${API_BASE_URL}/orders/user`,
-          {
-            headers: {
-              Authorization: `Bearer ${token}`,
-            },
-          }
-        );
-
-        console.log(
-          "My Orders Response:",
-          response.data
-        );
+        const response =
+          await apiClient.get(
+            `/orders/user/${user.id}`
+          );
 
         // =====================================
         // SAVE ORDERS
@@ -172,26 +177,8 @@ function MyOrders() {
       } catch (error) {
 
         console.error(
-          "================================="
-        );
-
-        console.error(
           "FETCH ORDERS ERROR:",
           error
-        );
-
-        console.error(
-          "STATUS:",
-          error.response?.status
-        );
-
-        console.error(
-          "BACKEND RESPONSE:",
-          error.response?.data
-        );
-
-        console.error(
-          "================================="
         );
 
         // =====================================
@@ -574,7 +561,9 @@ function MyOrders() {
                       {item.image ? (
 
                         <img
-                          src={item.image}
+                          src={getImageUrl(
+                            item.image
+                          )}
                           alt={
                             item.name ||
                             "Product"
@@ -709,3 +698,4 @@ function MyOrders() {
 }
 
 export default MyOrders;
+

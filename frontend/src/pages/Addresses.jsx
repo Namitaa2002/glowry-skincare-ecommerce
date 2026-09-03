@@ -1,45 +1,10 @@
+
 import {
   useEffect,
   useState,
 } from "react";
 
-import axios from "axios";
-
-import {
-  API_BASE_URL,
-} from "../config/api";
-
-
-// =========================================
-// GET AUTH CONFIG
-// =========================================
-
-const getAuthConfig = () => {
-
-  const token =
-    localStorage.getItem(
-      "glowryToken"
-    );
-
-  if (!token) {
-
-    return null;
-
-  }
-
-  return {
-
-    headers: {
-
-      Authorization:
-        `Bearer ${token}`,
-
-    },
-
-  };
-
-};
-
+import apiClient from "../services/apiClient";
 
 // =========================================
 // GET LOGGED IN USER
@@ -53,9 +18,7 @@ const getLoggedInUser = () => {
     );
 
   if (!savedUser) {
-
     return null;
-
   }
 
   try {
@@ -72,11 +35,8 @@ const getLoggedInUser = () => {
     );
 
     return null;
-
   }
-
 };
-
 
 // =========================================
 // INITIAL FORM
@@ -94,13 +54,11 @@ const initialFormData = {
 
 };
 
-
 // =========================================
 // ADDRESSES COMPONENT
 // =========================================
 
 function Addresses() {
-
 
   // =======================================
   // STATES
@@ -127,7 +85,6 @@ function Addresses() {
   const [formData, setFormData] =
     useState(initialFormData);
 
-
   // =======================================
   // LOAD ADDRESSES
   // =======================================
@@ -140,13 +97,8 @@ function Addresses() {
 
       setError("");
 
-
       const user =
         getLoggedInUser();
-
-      const authConfig =
-        getAuthConfig();
-
 
       // ===================================
       // CHECK LOGIN USER
@@ -162,42 +114,19 @@ function Addresses() {
         );
 
         return;
-
       }
-
-
-      // ===================================
-      // CHECK TOKEN
-      // ===================================
-
-      if (!authConfig) {
-
-        setError(
-          "Your session has expired. Please login again."
-        );
-
-        return;
-
-      }
-
 
       // ===================================
       // GET ADDRESSES
       // ===================================
 
       const response =
-        await axios.get(
-
-          `${API_BASE_URL}/addresses/${user.id}`,
-
-          authConfig
-
+        await apiClient.get(
+          `/addresses/${user.id}`
         );
-
 
       const data =
         response.data;
-
 
       // ===================================
       // SET ADDRESSES
@@ -207,11 +136,11 @@ function Addresses() {
         Array.isArray(data)
       ) {
 
-        setAddresses(data);
+        setAddresses(
+          data
+        );
 
-      }
-
-      else if (
+      } else if (
         Array.isArray(
           data?.addresses
         )
@@ -221,14 +150,11 @@ function Addresses() {
           data.addresses
         );
 
-      }
-
-      else {
+      } else {
 
         setAddresses([]);
 
       }
-
 
     } catch (error) {
 
@@ -237,13 +163,13 @@ function Addresses() {
         error
       );
 
-
       // ===================================
       // AUTH ERROR
       // ===================================
 
       if (
-        error.response?.status === 401
+        error.response?.status ===
+        401
       ) {
 
         setError(
@@ -252,25 +178,21 @@ function Addresses() {
 
       }
 
-
       // ===================================
       // FORBIDDEN
       // ===================================
 
       else if (
-        error.response?.status === 403
+        error.response?.status ===
+        403
       ) {
 
         setError(
-
           error.response?.data?.message ||
-
           "You are not authorized to access these addresses."
-
         );
 
       }
-
 
       // ===================================
       // OTHER ERROR
@@ -279,11 +201,8 @@ function Addresses() {
       else {
 
         setError(
-
           error.response?.data?.message ||
-
           "Failed to load addresses."
-
         );
 
       }
@@ -295,7 +214,6 @@ function Addresses() {
     }
 
   };
-
 
   // =========================================
   // LOAD ON PAGE OPEN
@@ -313,7 +231,6 @@ function Addresses() {
 
   }, []);
 
-
   // =========================================
   // INPUT CHANGE
   // =========================================
@@ -326,7 +243,6 @@ function Addresses() {
       type,
       checked,
     } = e.target;
-
 
     setFormData(
       (previous) => ({
@@ -341,11 +257,9 @@ function Addresses() {
       })
     );
 
-
     setError("");
 
   };
-
 
   // =========================================
   // RESET FORM
@@ -365,7 +279,6 @@ function Addresses() {
 
   };
 
-
   // =========================================
   // OPEN ADD FORM
   // =========================================
@@ -373,7 +286,6 @@ function Addresses() {
   const handleAddAddress = () => {
 
     setEditId(null);
-
 
     setFormData({
 
@@ -384,13 +296,11 @@ function Addresses() {
 
     });
 
-
     setError("");
 
     setShowForm(true);
 
   };
-
 
   // =========================================
   // SAVE ADDRESS
@@ -403,13 +313,8 @@ function Addresses() {
 
       setError("");
 
-
       const user =
         getLoggedInUser();
-
-      const authConfig =
-        getAuthConfig();
-
 
       // ===================================
       // CHECK USER
@@ -428,26 +333,9 @@ function Addresses() {
 
       }
 
-
-      // ===================================
-      // CHECK TOKEN
-      // ===================================
-
-      if (!authConfig) {
-
-        setError(
-          "Your session has expired. Please login again."
-        );
-
-        return;
-
-      }
-
-
       try {
 
         setSaving(true);
-
 
         // =================================
         // EDIT ADDRESS
@@ -455,18 +343,12 @@ function Addresses() {
 
         if (editId) {
 
-          await axios.put(
-
-            `${API_BASE_URL}/addresses/${editId}`,
-
-            formData,
-
-            authConfig
-
+          await apiClient.put(
+            `/addresses/${editId}`,
+            formData
           );
 
         }
-
 
         // =================================
         // ADD ADDRESS
@@ -474,10 +356,8 @@ function Addresses() {
 
         else {
 
-          await axios.post(
-
-            `${API_BASE_URL}/addresses`,
-
+          await apiClient.post(
+            "/addresses",
             {
 
               userId:
@@ -485,14 +365,10 @@ function Addresses() {
 
               ...formData,
 
-            },
-
-            authConfig
-
+            }
           );
 
         }
-
 
         // =================================
         // RESET FORM
@@ -500,13 +376,11 @@ function Addresses() {
 
         resetForm();
 
-
         // =================================
         // REFRESH FROM BACKEND
         // =================================
 
         await loadAddresses();
-
 
       } catch (error) {
 
@@ -515,13 +389,13 @@ function Addresses() {
           error
         );
 
-
         // =================================
         // AUTH ERROR
         // =================================
 
         if (
-          error.response?.status === 401
+          error.response?.status ===
+          401
         ) {
 
           setError(
@@ -530,25 +404,21 @@ function Addresses() {
 
         }
 
-
         // =================================
         // FORBIDDEN
         // =================================
 
         else if (
-          error.response?.status === 403
+          error.response?.status ===
+          403
         ) {
 
           setError(
-
             error.response?.data?.message ||
-
             "You are not authorized to modify this address."
-
           );
 
         }
-
 
         // =================================
         // OTHER ERROR
@@ -557,11 +427,8 @@ function Addresses() {
         else {
 
           setError(
-
             error.response?.data?.message ||
-
             "Failed to save address."
-
           );
 
         }
@@ -574,7 +441,6 @@ function Addresses() {
 
     };
 
-
   // =========================================
   // DELETE ADDRESS
   // =========================================
@@ -582,53 +448,24 @@ function Addresses() {
   const deleteAddress =
     async (id) => {
 
-
       const confirmDelete =
         window.confirm(
-
           "Are you sure you want to delete this address?"
-
         );
-
 
       if (!confirmDelete) {
-
         return;
-
       }
-
-
-      const authConfig =
-        getAuthConfig();
-
-
-      if (!authConfig) {
-
-        setError(
-          "Your session has expired. Please login again."
-        );
-
-        return;
-
-      }
-
 
       try {
 
         setError("");
 
-
-        await axios.delete(
-
-          `${API_BASE_URL}/addresses/${id}`,
-
-          authConfig
-
+        await apiClient.delete(
+          `/addresses/${id}`
         );
 
-
         await loadAddresses();
-
 
       } catch (error) {
 
@@ -637,9 +474,9 @@ function Addresses() {
           error
         );
 
-
         if (
-          error.response?.status === 401
+          error.response?.status ===
+          401
         ) {
 
           setError(
@@ -649,15 +486,13 @@ function Addresses() {
         }
 
         else if (
-          error.response?.status === 403
+          error.response?.status ===
+          403
         ) {
 
           setError(
-
             error.response?.data?.message ||
-
             "You are not authorized to delete this address."
-
           );
 
         }
@@ -665,11 +500,8 @@ function Addresses() {
         else {
 
           setError(
-
             error.response?.data?.message ||
-
             "Failed to delete address."
-
           );
 
         }
@@ -677,7 +509,6 @@ function Addresses() {
       }
 
     };
-
 
   // =========================================
   // EDIT ADDRESS
@@ -713,18 +544,15 @@ function Addresses() {
 
       });
 
-
       setEditId(
         item._id
       );
-
 
       setShowForm(true);
 
       setError("");
 
     };
-
 
   // =========================================
   // MAKE DEFAULT
@@ -733,40 +561,16 @@ function Addresses() {
   const makeDefault =
     async (id) => {
 
-
-      const authConfig =
-        getAuthConfig();
-
-
-      if (!authConfig) {
-
-        setError(
-          "Your session has expired. Please login again."
-        );
-
-        return;
-
-      }
-
-
       try {
 
         setError("");
 
-
-        await axios.put(
-
-          `${API_BASE_URL}/addresses/default/${id}`,
-
-          {},
-
-          authConfig
-
+        await apiClient.put(
+          `/addresses/default/${id}`,
+          {}
         );
 
-
         await loadAddresses();
-
 
       } catch (error) {
 
@@ -775,9 +579,9 @@ function Addresses() {
           error
         );
 
-
         if (
-          error.response?.status === 401
+          error.response?.status ===
+          401
         ) {
 
           setError(
@@ -787,15 +591,13 @@ function Addresses() {
         }
 
         else if (
-          error.response?.status === 403
+          error.response?.status ===
+          403
         ) {
 
           setError(
-
             error.response?.data?.message ||
-
             "You are not authorized to update this address."
-
           );
 
         }
@@ -803,11 +605,8 @@ function Addresses() {
         else {
 
           setError(
-
             error.response?.data?.message ||
-
             "Failed to update default address."
-
           );
 
         }
@@ -815,7 +614,6 @@ function Addresses() {
       }
 
     };
-
 
   // =========================================
   // LOADING
@@ -841,7 +639,6 @@ function Addresses() {
 
   }
 
-
   // =========================================
   // UI
   // =========================================
@@ -849,7 +646,6 @@ function Addresses() {
   return (
 
     <main className="address-page">
-
 
       {/* =====================================
           HEADER
@@ -861,11 +657,9 @@ function Addresses() {
           MY GLOWRY
         </p>
 
-
         <h1>
           My Addresses
         </h1>
-
 
         <p>
           Manage your delivery addresses.
@@ -873,13 +667,11 @@ function Addresses() {
 
       </section>
 
-
       {/* =====================================
           CONTENT
       ===================================== */}
 
       <section className="address-container">
-
 
         {/* ===================================
             ERROR
@@ -901,7 +693,6 @@ function Addresses() {
 
         )}
 
-
         {/* ===================================
             ADD BUTTON
         =================================== */}
@@ -911,7 +702,9 @@ function Addresses() {
           <button
             type="button"
             className="add-address-button"
-            onClick={handleAddAddress}
+            onClick={
+              handleAddAddress
+            }
           >
 
             + Add New Address
@@ -919,7 +712,6 @@ function Addresses() {
           </button>
 
         )}
-
 
         {/* ===================================
             FORM
@@ -929,7 +721,9 @@ function Addresses() {
 
           <form
             className="address-form"
-            onSubmit={handleSaveAddress}
+            onSubmit={
+              handleSaveAddress
+            }
           >
 
             <h2>
@@ -940,19 +734,21 @@ function Addresses() {
 
             </h2>
 
-
             {/* NAME */}
 
             <input
               type="text"
               name="name"
               placeholder="Full Name"
-              value={formData.name}
-              onChange={handleChange}
+              value={
+                formData.name
+              }
+              onChange={
+                handleChange
+              }
               autoComplete="name"
               required
             />
-
 
             {/* PHONE */}
 
@@ -960,24 +756,30 @@ function Addresses() {
               type="tel"
               name="phone"
               placeholder="Phone Number"
-              value={formData.phone}
-              onChange={handleChange}
+              value={
+                formData.phone
+              }
+              onChange={
+                handleChange
+              }
               autoComplete="tel"
               required
             />
-
 
             {/* ADDRESS */}
 
             <textarea
               name="address"
               placeholder="Full Address"
-              value={formData.address}
-              onChange={handleChange}
+              value={
+                formData.address
+              }
+              onChange={
+                handleChange
+              }
               autoComplete="street-address"
               required
             />
-
 
             {/* CITY */}
 
@@ -985,12 +787,15 @@ function Addresses() {
               type="text"
               name="city"
               placeholder="City"
-              value={formData.city}
-              onChange={handleChange}
+              value={
+                formData.city
+              }
+              onChange={
+                handleChange
+              }
               autoComplete="address-level2"
               required
             />
-
 
             {/* STATE */}
 
@@ -998,12 +803,15 @@ function Addresses() {
               type="text"
               name="state"
               placeholder="State"
-              value={formData.state}
-              onChange={handleChange}
+              value={
+                formData.state
+              }
+              onChange={
+                handleChange
+              }
               autoComplete="address-level1"
               required
             />
-
 
             {/* PINCODE */}
 
@@ -1011,13 +819,16 @@ function Addresses() {
               type="text"
               name="pincode"
               placeholder="Pincode"
-              value={formData.pincode}
-              onChange={handleChange}
+              value={
+                formData.pincode
+              }
+              onChange={
+                handleChange
+              }
               inputMode="numeric"
               autoComplete="postal-code"
               required
             />
-
 
             {/* DEFAULT ADDRESS */}
 
@@ -1031,9 +842,10 @@ function Addresses() {
                 checked={
                   formData.isDefault
                 }
-                onChange={handleChange}
+                onChange={
+                  handleChange
+                }
               />
-
 
               <span>
                 Make this my default address
@@ -1041,14 +853,15 @@ function Addresses() {
 
             </label>
 
-
             {/* BUTTONS */}
 
             <div className="address-actions">
 
               <button
                 type="submit"
-                disabled={saving}
+                disabled={
+                  saving
+                }
               >
 
                 {saving
@@ -1059,11 +872,14 @@ function Addresses() {
 
               </button>
 
-
               <button
                 type="button"
-                onClick={resetForm}
-                disabled={saving}
+                onClick={
+                  resetForm
+                }
+                disabled={
+                  saving
+                }
               >
 
                 Cancel
@@ -1075,7 +891,6 @@ function Addresses() {
           </form>
 
         )}
-
 
         {/* ===================================
             ADDRESS LIST
@@ -1091,11 +906,9 @@ function Addresses() {
                 📍
               </div>
 
-
               <h3>
                 No saved addresses
               </h3>
-
 
               <p>
                 Add an address for faster checkout.
@@ -1110,9 +923,10 @@ function Addresses() {
 
                 <div
                   className="address-card"
-                  key={item._id}
+                  key={
+                    item._id
+                  }
                 >
-
 
                   {/* DEFAULT BADGE */}
 
@@ -1126,20 +940,17 @@ function Addresses() {
 
                   )}
 
-
                   {/* NAME */}
 
                   <h3>
                     {item.name}
                   </h3>
 
-
                   {/* PHONE */}
 
                   <p>
                     📞 {item.phone}
                   </p>
-
 
                   {/* ADDRESS */}
 
@@ -1159,25 +970,26 @@ function Addresses() {
 
                   </p>
 
-
                   {/* ACTIONS */}
 
-                  <div className="address-actions">
-
+                  <div
+                    className="address-actions"
+                  >
 
                     {/* EDIT */}
 
                     <button
                       type="button"
                       onClick={() =>
-                        editAddress(item)
+                        editAddress(
+                          item
+                        )
                       }
                     >
 
                       Edit
 
                     </button>
-
 
                     {/* DELETE */}
 
@@ -1193,7 +1005,6 @@ function Addresses() {
                       Delete
 
                     </button>
-
 
                     {/* MAKE DEFAULT */}
 
@@ -1233,5 +1044,5 @@ function Addresses() {
 
 }
 
-
 export default Addresses;
+

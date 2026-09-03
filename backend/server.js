@@ -1,3 +1,4 @@
+
 import express from "express";
 import cors from "cors";
 import dotenv from "dotenv";
@@ -23,23 +24,11 @@ import reviewRoutes from "./routes/reviewRoutes.js";
 
 dotenv.config();
 
-console.log(
-  "EMAIL_USER:",
-  process.env.EMAIL_USER
-);
-
-console.log(
-  "EMAIL_PASS:",
-  process.env.EMAIL_PASS
-    ? "Loaded"
-    : "Missing"
-);
 // =========================================
 // CREATE EXPRESS APP
 // =========================================
 
 const app = express();
-
 
 const __dirname = path.resolve();
 
@@ -48,21 +37,25 @@ app.use(
     path.join(__dirname, "public")
   )
 );
+
 // =========================================
 // CONNECT DATABASE
 // =========================================
 
 connectDB();
 
-
 // =========================================
 // MIDDLEWARE
 // =========================================
 
-app.use(cors());
+app.use(
+  cors({
+    origin: process.env.FRONTEND_URL,
+    credentials: true,
+  })
+);
 
 app.use(express.json());
-
 
 // =========================================
 // PRODUCT ROUTES
@@ -72,7 +65,6 @@ app.use(
   "/api/products",
   productRoutes
 );
-
 
 // =========================================
 // CART ROUTES
@@ -95,7 +87,6 @@ app.use(
 // =========================================
 // WISHLIST ROUTES
 // =========================================
-
 
 app.use(
   "/api/wishlist",
@@ -156,10 +147,10 @@ app.use(
   adminOrderRoutes
 );
 
-
 // =========================================
 // ADMIN USERS ROUTES
 // =========================================
+
 app.use(
   "/api/admin/users",
   adminUserRoutes
@@ -179,16 +170,11 @@ app.use(
 // =========================================
 
 app.get("/", (req, res) => {
-
   res.json({
-
     message:
       "GLOWRY Backend API is running",
-
   });
-
 });
-
 
 // =========================================
 // SERVER
@@ -197,11 +183,5 @@ app.get("/", (req, res) => {
 const PORT =
   process.env.PORT || 5000;
 
+app.listen(PORT);
 
-app.listen(PORT, () => {
-
-  console.log(
-    `Server running on port ${PORT}`
-  );
-
-});

@@ -1,6 +1,14 @@
-import { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
-import axios from "axios";
+
+import {
+  useEffect,
+  useState,
+} from "react";
+
+import {
+  useNavigate,
+} from "react-router-dom";
+
+import apiClient from "../services/apiClient";
 
 import {
   ShoppingBag,
@@ -13,26 +21,12 @@ import {
   PackageCheck,
 } from "lucide-react";
 
-
-// =========================================================
-// API CONFIG
-// =========================================================
-
-const API_BASE_URL =
-  import.meta.env.VITE_API_URL || "";
-
-const ADMIN_ORDERS_API =
-  `${API_BASE_URL}/api/admin/orders`;
-
-
 // =========================================================
 // ADMIN ORDERS
 // =========================================================
 
 function AdminOrders() {
-
   const navigate = useNavigate();
-
 
   // =========================================================
   // STATES
@@ -47,39 +41,36 @@ function AdminOrders() {
   const [error, setError] =
     useState("");
 
-  const [selectedOrder, setSelectedOrder] =
-    useState(null);
+  const [
+    selectedOrder,
+    setSelectedOrder,
+  ] = useState(null);
 
-  const [updatingOrderId, setUpdatingOrderId] =
-    useState(null);
-
+  const [
+    updatingOrderId,
+    setUpdatingOrderId,
+  ] = useState(null);
 
   // =========================================================
   // FETCH ORDERS
   // =========================================================
 
   useEffect(() => {
-
     const fetchOrders = async () => {
-
       try {
-
         setLoading(true);
         setError("");
-
 
         const token =
           localStorage.getItem(
             "glowryAdminToken"
           );
 
-
         // ===============================================
         // CHECK ADMIN TOKEN
         // ===============================================
 
         if (!token) {
-
           navigate(
             "/admin/login",
             {
@@ -88,25 +79,18 @@ function AdminOrders() {
           );
 
           return;
-
         }
-
 
         // ===============================================
         // GET ORDERS
+        // Authorization is automatically added
+        // by the axios interceptor.
         // ===============================================
 
         const response =
-          await axios.get(
-            ADMIN_ORDERS_API,
-            {
-              headers: {
-                Authorization:
-                  `Bearer ${token}`,
-              },
-            }
+          await apiClient.get(
+            "/admin/orders"
           );
-
 
         // ===============================================
         // RESPONSE DATA
@@ -115,43 +99,35 @@ function AdminOrders() {
         const data =
           response.data;
 
-
         if (Array.isArray(data)) {
-
           setOrders(data);
-
         } else if (
-          Array.isArray(data?.orders)
+          Array.isArray(
+            data?.orders
+          )
         ) {
-
           setOrders(
             data.orders
           );
-
         } else {
-
           setOrders([]);
-
         }
-
-
       } catch (error) {
-
         console.error(
           "Admin Orders Error:",
           error
         );
-
 
         // ===============================================
         // AUTH ERROR
         // ===============================================
 
         if (
-          error.response?.status === 401 ||
-          error.response?.status === 403
+          error.response?.status ===
+            401 ||
+          error.response?.status ===
+            403
         ) {
-
           localStorage.removeItem(
             "glowryAdminToken"
           );
@@ -159,7 +135,6 @@ function AdminOrders() {
           localStorage.removeItem(
             "glowryAdminUser"
           );
-
 
           navigate(
             "/admin/login",
@@ -169,91 +144,72 @@ function AdminOrders() {
           );
 
           return;
-
         }
-
 
         // ===============================================
         // OTHER ERROR
         // ===============================================
 
         setError(
-
-          error.response?.data?.message ||
-
-          "Unable to load orders."
-
+          error.response?.data
+            ?.message ||
+            "Unable to load orders."
         );
-
       } finally {
-
         setLoading(false);
-
       }
-
     };
 
-
     fetchOrders();
-
   }, [navigate]);
-
 
   // =========================================================
   // STATUS ICON
   // =========================================================
 
-  const getStatusIcon = (status) => {
-
+  const getStatusIcon = (
+    status
+  ) => {
     switch (status) {
-
       case "Delivered":
-
         return (
-          <CheckCircle2 size={15} />
+          <CheckCircle2
+            size={15}
+          />
         );
 
-
       case "Shipped":
-
         return (
           <Truck size={15} />
         );
 
-
       case "Confirmed":
-
         return (
-          <PackageCheck size={15} />
+          <PackageCheck
+            size={15}
+          />
         );
 
-
       case "Cancelled":
-
         return (
           <XCircle size={15} />
         );
 
-
       default:
-
         return (
           <Clock3 size={15} />
         );
-
     }
-
   };
-
 
   // =========================================================
   // STATUS CLASS
   // =========================================================
 
-  const getStatusClass = (status) => {
-
+  const getStatusClass = (
+    status
+  ) => {
     switch (status) {
-
       case "Delivered":
         return "admin-status-delivered";
 
@@ -268,11 +224,8 @@ function AdminOrders() {
 
       default:
         return "admin-status-processing";
-
     }
-
   };
-
 
   // =========================================================
   // UPDATE ORDER STATUS
@@ -283,26 +236,21 @@ function AdminOrders() {
       orderId,
       newStatus
     ) => {
-
       try {
-
         setUpdatingOrderId(
           orderId
         );
-
 
         const token =
           localStorage.getItem(
             "glowryAdminToken"
           );
 
-
         // ===============================================
         // CHECK TOKEN
         // ===============================================
 
         if (!token) {
-
           navigate(
             "/admin/login",
             {
@@ -311,96 +259,77 @@ function AdminOrders() {
           );
 
           return;
-
         }
-
 
         // ===============================================
         // UPDATE STATUS
+        // Authorization is automatically added
+        // by the axios interceptor.
         // ===============================================
 
         const response =
-          await axios.put(
-
-            `${ADMIN_ORDERS_API}/${orderId}/status`,
-
+          await apiClient.put(
+            `/admin/orders/${orderId}/status`,
             {
               status:
                 newStatus,
-            },
-
-            {
-              headers: {
-                Authorization:
-                  `Bearer ${token}`,
-              },
             }
-
           );
-
 
         const updatedOrder =
           response.data?.order;
 
-
         if (!updatedOrder) {
-
           throw new Error(
             "Updated order was not returned by server."
           );
-
         }
-
 
         // ===============================================
         // UPDATE TABLE
         // ===============================================
 
         setOrders(
-          (previousOrders) =>
-
+          (
+            previousOrders
+          ) =>
             previousOrders.map(
               (order) =>
-
-                order._id === orderId
+                order._id ===
+                orderId
                   ? updatedOrder
                   : order
             )
         );
-
 
         // ===============================================
         // UPDATE MODAL
         // ===============================================
 
         if (
-          selectedOrder?._id === orderId
+          selectedOrder?._id ===
+          orderId
         ) {
-
           setSelectedOrder(
             updatedOrder
           );
-
         }
-
-
       } catch (error) {
-
         console.error(
           "Update Order Status Error:",
           error
         );
-
 
         // ===============================================
         // AUTH ERROR
         // ===============================================
 
         if (
-          error.response?.status === 401 ||
-          error.response?.status === 403
+          error.response?.status ===
+            401 ||
+          error.response?.status ===
+            403
         ) {
-
           localStorage.removeItem(
             "glowryAdminToken"
           );
@@ -409,7 +338,6 @@ function AdminOrders() {
             "glowryAdminUser"
           );
 
-
           navigate(
             "/admin/login",
             {
@@ -418,28 +346,19 @@ function AdminOrders() {
           );
 
           return;
-
         }
 
-
         alert(
-
-          error.response?.data?.message ||
-
-          "Unable to update order status."
-
+          error.response?.data
+            ?.message ||
+            "Unable to update order status."
         );
-
       } finally {
-
         setUpdatingOrderId(
           null
         );
-
       }
-
     };
-
 
   // =========================================================
   // VIEW ORDER
@@ -449,21 +368,17 @@ function AdminOrders() {
     async (
       orderId
     ) => {
-
       try {
-
         const token =
           localStorage.getItem(
             "glowryAdminToken"
           );
-
 
         // ===============================================
         // CHECK TOKEN
         // ===============================================
 
         if (!token) {
-
           navigate(
             "/admin/login",
             {
@@ -472,56 +387,42 @@ function AdminOrders() {
           );
 
           return;
-
         }
-
 
         // ===============================================
         // GET ORDER DETAILS
+        // Authorization is automatically added
+        // by the axios interceptor.
         // ===============================================
 
         const response =
-          await axios.get(
-
-            `${ADMIN_ORDERS_API}/${orderId}`,
-
-            {
-              headers: {
-                Authorization:
-                  `Bearer ${token}`,
-              },
-            }
-
+          await apiClient.get(
+            `/admin/orders/${orderId}`
           );
-
 
         const order =
           response.data?.order ||
           response.data;
 
-
         setSelectedOrder(
           order
         );
-
-
       } catch (error) {
-
         console.error(
           "View Order Error:",
           error
         );
-
 
         // ===============================================
         // AUTH ERROR
         // ===============================================
 
         if (
-          error.response?.status === 401 ||
-          error.response?.status === 403
+          error.response?.status ===
+            401 ||
+          error.response?.status ===
+            403
         ) {
-
           localStorage.removeItem(
             "glowryAdminToken"
           );
@@ -530,7 +431,6 @@ function AdminOrders() {
             "glowryAdminUser"
           );
 
-
           navigate(
             "/admin/login",
             {
@@ -539,35 +439,26 @@ function AdminOrders() {
           );
 
           return;
-
         }
 
-
         alert(
-
-          error.response?.data?.message ||
-
-          "Unable to load order details."
-
+          error.response?.data
+            ?.message ||
+            "Unable to load order details."
         );
-
       }
-
     };
-
 
   // =========================================================
   // FORMAT DATE
   // =========================================================
 
-  const formatDate = (date) => {
-
+  const formatDate = (
+    date
+  ) => {
     if (!date) {
-
       return "N/A";
-
     }
-
 
     return new Date(
       date
@@ -579,50 +470,35 @@ function AdminOrders() {
         year: "numeric",
       }
     );
-
   };
-
 
   // =========================================================
   // LOADING
   // =========================================================
 
   if (loading) {
-
     return (
-
       <main className="admin-orders-page">
-
         <div className="admin-orders-loading">
-
           <div className="admin-loading-spinner">
           </div>
 
           <p>
             Loading orders...
           </p>
-
         </div>
-
       </main>
-
     );
-
   }
-
 
   // =========================================================
   // ERROR
   // =========================================================
 
   if (error) {
-
     return (
-
       <main className="admin-orders-page">
-
         <div className="admin-orders-error">
-
           <ShoppingBag size={40} />
 
           <h2>
@@ -643,24 +519,17 @@ function AdminOrders() {
           >
             Back to Dashboard
           </button>
-
         </div>
-
       </main>
-
     );
-
   }
-
 
   // =========================================================
   // PAGE
   // =========================================================
 
   return (
-
     <main className="admin-orders-page">
-
 
       {/* =====================================================
           HEADER
@@ -669,7 +538,6 @@ function AdminOrders() {
       <header className="admin-orders-header">
 
         <div>
-
           <p className="admin-orders-eyebrow">
             GLOWRY ADMINISTRATION
           </p>
@@ -679,12 +547,11 @@ function AdminOrders() {
           </h1>
 
           <p>
-            View and manage customer orders
-            from your GLOWRY store.
+            View and manage customer
+            orders from your GLOWRY
+            store.
           </p>
-
         </div>
-
 
         <button
           type="button"
@@ -695,15 +562,12 @@ function AdminOrders() {
             )
           }
         >
-
           <ArrowLeft size={16} />
 
           Dashboard
-
         </button>
 
       </header>
-
 
       {/* =====================================================
           SUMMARY
@@ -712,7 +576,6 @@ function AdminOrders() {
       <section className="admin-orders-summary">
 
         <div>
-
           <span>
             TOTAL ORDERS
           </span>
@@ -720,18 +583,14 @@ function AdminOrders() {
           <strong>
             {orders.length}
           </strong>
-
         </div>
 
-
         <div>
-
           <span>
             PENDING
           </span>
 
           <strong>
-
             {
               orders.filter(
                 (order) =>
@@ -741,20 +600,15 @@ function AdminOrders() {
                     "Confirmed"
               ).length
             }
-
           </strong>
-
         </div>
 
-
         <div>
-
           <span>
             DELIVERED
           </span>
 
           <strong>
-
             {
               orders.filter(
                 (order) =>
@@ -762,20 +616,15 @@ function AdminOrders() {
                   "Delivered"
               ).length
             }
-
           </strong>
-
         </div>
 
-
         <div>
-
           <span>
             CANCELLED
           </span>
 
           <strong>
-
             {
               orders.filter(
                 (order) =>
@@ -783,13 +632,10 @@ function AdminOrders() {
                   "Cancelled"
               ).length
             }
-
           </strong>
-
         </div>
 
       </section>
-
 
       {/* =====================================================
           ORDERS CARD
@@ -800,7 +646,6 @@ function AdminOrders() {
         <div className="admin-orders-card-header">
 
           <div>
-
             <span>
               STORE ACTIVITY
             </span>
@@ -808,24 +653,19 @@ function AdminOrders() {
             <h2>
               All Orders
             </h2>
-
           </div>
 
         </div>
-
 
         {/* ===================================================
             EMPTY
         =================================================== */}
 
         {orders.length === 0 ? (
-
           <div className="admin-orders-empty">
 
             <div className="admin-orders-empty-icon">
-
               <ShoppingBag size={28} />
-
             </div>
 
             <h3>
@@ -833,16 +673,14 @@ function AdminOrders() {
             </h3>
 
             <p>
-              Customer orders will appear
-              here once they place an order.
+              Customer orders will
+              appear here once they
+              place an order.
             </p>
 
           </div>
-
         ) : (
-
           <div className="admin-orders-table">
-
 
             {/* =================================================
                 TABLE HEADER
@@ -876,21 +714,18 @@ function AdminOrders() {
 
             </div>
 
-
             {/* =================================================
                 ORDERS
             ================================================= */}
 
             {orders.map(
               (order) => (
-
                 <div
                   className="admin-orders-row"
                   key={
                     order._id
                   }
                 >
-
 
                   {/* ORDER */}
 
@@ -901,13 +736,12 @@ function AdminOrders() {
                     </strong>
 
                     <span>
-                      {order.items?.length || 0}
-                      {" "}
+                      {order.items?.length ||
+                        0}{" "}
                       item(s)
                     </span>
 
                   </div>
-
 
                   {/* CUSTOMER */}
 
@@ -933,31 +767,24 @@ function AdminOrders() {
 
                   </div>
 
-
                   {/* DATE */}
 
                   <span className="admin-order-date">
-
                     {formatDate(
                       order.createdAt
                     )}
-
                   </span>
-
 
                   {/* AMOUNT */}
 
                   <strong className="admin-order-amount">
-
                     ₹
                     {Number(
                       order.total || 0
                     ).toLocaleString(
                       "en-IN"
                     )}
-
                   </strong>
-
 
                   {/* STATUS */}
 
@@ -972,16 +799,13 @@ function AdminOrders() {
                         }`
                       }
                     >
-
                       {getStatusIcon(
                         order.status
                       )}
 
                       {order.status ||
                         "Processing"}
-
                     </span>
-
 
                     <select
                       value={
@@ -1000,7 +824,6 @@ function AdminOrders() {
                       }
                       className="admin-order-status-select"
                     >
-
                       <option value="Processing">
                         Processing
                       </option>
@@ -1020,11 +843,9 @@ function AdminOrders() {
                       <option value="Cancelled">
                         Cancelled
                       </option>
-
                     </select>
 
                   </div>
-
 
                   {/* ACTION */}
 
@@ -1037,36 +858,31 @@ function AdminOrders() {
                       )
                     }
                   >
-
                     <Eye size={15} />
 
                     View
-
                   </button>
 
-
                 </div>
-
               )
             )}
 
           </div>
-
         )}
 
       </section>
-
 
       {/* =====================================================
           ORDER DETAILS MODAL
       ===================================================== */}
 
       {selectedOrder && (
-
         <div
           className="admin-order-modal-overlay"
           onClick={() =>
-            setSelectedOrder(null)
+            setSelectedOrder(
+              null
+            )
           }
         >
 
@@ -1076,7 +892,6 @@ function AdminOrders() {
               e.stopPropagation()
             }
           >
-
 
             {/* =================================================
                 MODAL HEADER
@@ -1091,24 +906,27 @@ function AdminOrders() {
                 </span>
 
                 <h2>
-                  #{selectedOrder.orderId}
+                  #
+                  {
+                    selectedOrder.orderId
+                  }
                 </h2>
 
               </div>
-
 
               <button
                 type="button"
                 className="admin-order-modal-close"
                 onClick={() =>
-                  setSelectedOrder(null)
+                  setSelectedOrder(
+                    null
+                  )
                 }
               >
                 ×
               </button>
 
             </div>
-
 
             {/* =================================================
                 CUSTOMER
@@ -1122,9 +940,11 @@ function AdminOrders() {
 
               <h3>
                 {
-                  selectedOrder.customer
+                  selectedOrder
+                    .customer
                     ?.fullName ||
-                  selectedOrder.customer
+                  selectedOrder
+                    .customer
                     ?.name ||
                   "Customer"
                 }
@@ -1132,7 +952,8 @@ function AdminOrders() {
 
               <p>
                 {
-                  selectedOrder.customer
+                  selectedOrder
+                    .customer
                     ?.email ||
                   "No email"
                 }
@@ -1140,14 +961,14 @@ function AdminOrders() {
 
               <p>
                 {
-                  selectedOrder.customer
+                  selectedOrder
+                    .customer
                     ?.phone ||
                   "No phone"
                 }
               </p>
 
             </div>
-
 
             {/* =================================================
                 ADDRESS
@@ -1161,7 +982,8 @@ function AdminOrders() {
 
               <p>
                 {
-                  selectedOrder.customer
+                  selectedOrder
+                    .customer
                     ?.address ||
                   "Address not available"
                 }
@@ -1170,35 +992,41 @@ function AdminOrders() {
               <p>
 
                 {
-                  selectedOrder.customer
+                  selectedOrder
+                    .customer
                     ?.city ||
                   ""
                 }
 
                 {
-                  selectedOrder.customer
+                  selectedOrder
+                    .customer
                     ?.city &&
-                  selectedOrder.customer
+                  selectedOrder
+                    .customer
                     ?.state
                     ? ", "
                     : ""
                 }
 
                 {
-                  selectedOrder.customer
+                  selectedOrder
+                    .customer
                     ?.state ||
                   ""
                 }
 
                 {
-                  selectedOrder.customer
+                  selectedOrder
+                    .customer
                     ?.pincode
                     ? " - "
                     : ""
                 }
 
                 {
-                  selectedOrder.customer
+                  selectedOrder
+                    .customer
                     ?.pincode ||
                   ""
                 }
@@ -1206,7 +1034,6 @@ function AdminOrders() {
               </p>
 
             </div>
-
 
             {/* =================================================
                 ITEMS
@@ -1218,31 +1045,33 @@ function AdminOrders() {
                 ORDER ITEMS
               </span>
 
-
               <div className="admin-order-items">
 
-                {selectedOrder.items?.length > 0 ? (
-
+                {selectedOrder.items
+                  ?.length > 0 ? (
                   selectedOrder.items.map(
-                    (item, index) => {
+                    (
+                      item,
+                      index
+                    ) => {
 
                       const itemPrice =
                         Number(
-                          item.price || 0
+                          item.price ||
+                            0
                         );
 
                       const quantity =
                         Number(
-                          item.quantity || 0
+                          item.quantity ||
+                            0
                         );
 
                       const itemTotal =
                         itemPrice *
                         quantity;
 
-
                       return (
-
                         <div
                           className="admin-order-item"
                           key={
@@ -1255,7 +1084,9 @@ function AdminOrders() {
                           <div>
 
                             <strong>
-                              {item.name}
+                              {
+                                item.name
+                              }
                             </strong>
 
                             <span>
@@ -1273,36 +1104,26 @@ function AdminOrders() {
 
                           </div>
 
-
                           <strong>
-
                             ₹
                             {itemTotal.toLocaleString(
                               "en-IN"
                             )}
-
                           </strong>
 
                         </div>
-
                       );
-
                     }
-
                   )
-
                 ) : (
-
                   <p>
                     No items found.
                   </p>
-
                 )}
 
               </div>
 
             </div>
-
 
             {/* =================================================
                 PAYMENT
@@ -1317,20 +1138,16 @@ function AdminOrders() {
                 </span>
 
                 <strong>
-
                   {
-                    selectedOrder.paymentMethod ===
+                    selectedOrder
+                      .paymentMethod ===
                     "online"
-
                       ? "Online Payment"
-
                       : "Cash on Delivery"
                   }
-
                 </strong>
 
               </div>
-
 
               <div>
 
@@ -1339,19 +1156,16 @@ function AdminOrders() {
                 </span>
 
                 <strong>
-
                   ₹
                   {Number(
                     selectedOrder.subtotal ||
-                    0
+                      0
                   ).toLocaleString(
                     "en-IN"
                   )}
-
                 </strong>
 
               </div>
-
 
               <div>
 
@@ -1360,19 +1174,16 @@ function AdminOrders() {
                 </span>
 
                 <strong>
-
                   - ₹
                   {Number(
                     selectedOrder.discount ||
-                    0
+                      0
                   ).toLocaleString(
                     "en-IN"
                   )}
-
                 </strong>
 
               </div>
-
 
               <div className="admin-order-total">
 
@@ -1381,21 +1192,18 @@ function AdminOrders() {
                 </span>
 
                 <strong>
-
                   ₹
                   {Number(
                     selectedOrder.total ||
-                    0
+                      0
                   ).toLocaleString(
                     "en-IN"
                   )}
-
                 </strong>
 
               </div>
 
             </div>
-
 
             {/* =================================================
                 STATUS
@@ -1451,14 +1259,11 @@ function AdminOrders() {
           </div>
 
         </div>
-
       )}
 
     </main>
-
   );
-
 }
 
-
 export default AdminOrders;
+

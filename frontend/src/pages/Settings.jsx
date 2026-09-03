@@ -1,5 +1,5 @@
 
-import { Link, useNavigate, useParams } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { useState } from "react";
 import axios from "axios";
 
@@ -8,22 +8,70 @@ import {
 } from "../config/api";
 
 
-function ResetPassword() {
-
-  const { token } = useParams();
+function Settings() {
 
   const navigate = useNavigate();
 
 
   // =========================================
-  // FORM DATA
+  // LOAD LOGGED-IN USER
   // =========================================
 
-  const [password, setPassword] =
+  const [user] = useState(() => {
+
+    try {
+
+      const savedUser =
+        localStorage.getItem(
+          "glowryLoggedInUser"
+        );
+
+      if (!savedUser) {
+        return null;
+      }
+
+      return JSON.parse(savedUser);
+
+    } catch (error) {
+
+      console.error(
+        "Error loading user:",
+        error
+      );
+
+      return null;
+
+    }
+
+  });
+
+
+  // =========================================
+  // CHANGE PASSWORD FORM
+  // =========================================
+
+  const [currentPassword, setCurrentPassword] =
+    useState("");
+
+  const [newPassword, setNewPassword] =
     useState("");
 
   const [confirmPassword, setConfirmPassword] =
     useState("");
+
+
+  // =========================================
+  // SHOW / HIDE PASSWORD
+  // =========================================
+
+  const [showCurrentPassword, setShowCurrentPassword] =
+    useState(false);
+
+  const [showNewPassword, setShowNewPassword] =
+    useState(false);
+
+  const [showConfirmPassword, setShowConfirmPassword] =
+    useState(false);
 
 
   // =========================================
@@ -41,21 +89,23 @@ function ResetPassword() {
 
 
   // =========================================
-  // SHOW PASSWORD
+  // CHECK LOGIN
   // =========================================
 
-  const [showPassword, setShowPassword] =
-    useState(false);
+  if (!user) {
 
-  const [showConfirmPassword, setShowConfirmPassword] =
-    useState(false);
+    navigate("/login");
+
+    return null;
+
+  }
 
 
   // =========================================
-  // RESET PASSWORD
+  // CHANGE PASSWORD
   // =========================================
 
-  const handleResetPassword =
+  const handleChangePassword =
     async (e) => {
 
       e.preventDefault();
@@ -69,12 +119,13 @@ function ResetPassword() {
       // =======================================
 
       if (
-        !password ||
+        !currentPassword ||
+        !newPassword ||
         !confirmPassword
       ) {
 
         setError(
-          "Please fill in all fields."
+          "Please fill in all password fields."
         );
 
         return;
@@ -82,10 +133,10 @@ function ResetPassword() {
       }
 
 
-      if (password.length < 6) {
+      if (newPassword.length < 6) {
 
         setError(
-          "Password must be at least 6 characters."
+          "New password must be at least 6 characters."
         );
 
         return;
@@ -94,12 +145,12 @@ function ResetPassword() {
 
 
       if (
-        password !==
+        newPassword !==
         confirmPassword
       ) {
 
         setError(
-          "Passwords do not match."
+          "New passwords do not match."
         );
 
         return;
@@ -107,10 +158,13 @@ function ResetPassword() {
       }
 
 
-      if (!token) {
+      if (
+        currentPassword ===
+        newPassword
+      ) {
 
         setError(
-          "Invalid password reset link."
+          "New password must be different from your current password."
         );
 
         return;
@@ -127,16 +181,37 @@ function ResetPassword() {
         setLoading(true);
 
 
-        const response =
-          await axios.post(
+        const token =
+          localStorage.getItem(
+            "glowryToken"
+          );
 
-            `${API_BASE_URL}/auth/reset-password/${token}`,
+
+        const response =
+          await axios.put(
+
+            `${API_BASE_URL}/auth/change-password`,
 
             {
 
-              password,
+              userId: user.id,
+
+              currentPassword,
+
+              newPassword,
 
               confirmPassword,
+
+            },
+
+            {
+
+              headers: {
+
+                Authorization:
+                  `Bearer ${token}`,
+
+              },
 
             }
 
@@ -144,29 +219,26 @@ function ResetPassword() {
 
 
         setSuccess(
-          response.data.message
+
+          response.data.message ||
+          "Password changed successfully."
+
         );
 
 
-        setPassword("");
+        // =====================================
+        // CLEAR FORM
+        // =====================================
+
+        setCurrentPassword("");
+        setNewPassword("");
         setConfirmPassword("");
-
-
-        // =====================================
-        // REDIRECT TO LOGIN
-        // =====================================
-
-        setTimeout(() => {
-
-          navigate("/login");
-
-        }, 2000);
 
 
       } catch (error) {
 
         console.error(
-          "Reset Password Error:",
+          "Change Password Error:",
           error
         );
 
@@ -175,7 +247,7 @@ function ResetPassword() {
 
           error.response?.data?.message ||
 
-          "Unable to reset password. Please try again."
+          "Unable to change password. Please try again."
 
         );
 
@@ -188,272 +260,618 @@ function ResetPassword() {
     };
 
 
+  // =========================================
+  // LOGOUT
+  // =========================================
+
+  const handleLogout = () => {
+
+    localStorage.removeItem(
+      "glowryLoggedInUser"
+    );
+
+    localStorage.removeItem(
+      "glowryToken"
+    );
+
+    navigate("/login");
+
+  };
+
+
+  // =========================================
+  // PAGE
+  // =========================================
+
   return (
 
-    <main className="auth-page">
-
-      <section className="auth-card">
+    <main className="dashboard-page">
 
 
-        {/* =================================
-            HEADER
-        ================================= */}
+      {/* =====================================
+          HEADER
+      ===================================== */}
 
-        <div className="auth-header">
+      <section className="dashboard-header">
+
+        <div>
 
           <p className="section-small-title">
-            ACCOUNT RECOVERY
+            ACCOUNT SETTINGS
           </p>
 
 
           <h1>
-            Reset Password
+            Settings
           </h1>
 
 
           <p>
-            Create a new password for your
-            GLOWRY account.
+            Manage your account preferences
+            and security.
           </p>
 
         </div>
 
 
-        {/* =================================
-            FORM
-        ================================= */}
-
-        <form
-          className="auth-form"
-          onSubmit={handleResetPassword}
+        <Link
+          to="/dashboard"
+          className="dashboard-view-all"
         >
+          ← Back to Dashboard
+        </Link>
+
+      </section>
 
 
-          {/* =================================
-              NEW PASSWORD
-          ================================= */}
+      {/* =====================================
+          SETTINGS CONTENT
+      ===================================== */}
 
-          <div className="auth-field">
-
-            <label>
-              New Password
-            </label>
+      <section className="dashboard-content">
 
 
-            <div className="password-input-wrapper">
+        {/* ===================================
+            ACCOUNT INFORMATION
+        =================================== */}
 
-              <input
+        <div className="dashboard-card">
 
-                type={
-                  showPassword
-                    ? "text"
-                    : "password"
-                }
+          <div className="dashboard-card-header">
 
-                name="password"
+            <div>
 
-                value={password}
-
-                onChange={(e) => {
-
-                  setPassword(
-                    e.target.value
-                  );
-
-                  setError("");
-
-                  setSuccess("");
-
-                }}
-
-                placeholder="Enter new password"
-
-                autoComplete="new-password"
-
-                required
-
-              />
+              <p className="summary-label">
+                ACCOUNT
+              </p>
 
 
-              <button
-
-                type="button"
-
-                className="password-toggle"
-
-                onClick={() =>
-                  setShowPassword(
-                    !showPassword
-                  )
-                }
-
-              >
-
-                {showPassword
-                  ? "Hide"
-                  : "Show"
-                }
-
-              </button>
+              <h2>
+                Account Information
+              </h2>
 
             </div>
 
           </div>
 
 
-          {/* =================================
-              CONFIRM PASSWORD
-          ================================= */}
-
-          <div className="auth-field">
-
-            <label>
-              Confirm Password
-            </label>
+          <div className="settings-info-grid">
 
 
-            <div className="password-input-wrapper">
+            {/* NAME */}
 
-              <input
-
-                type={
-                  showConfirmPassword
-                    ? "text"
-                    : "password"
-                }
-
-                name="confirmPassword"
-
-                value={
-                  confirmPassword
-                }
-
-                onChange={(e) => {
-
-                  setConfirmPassword(
-                    e.target.value
-                  );
-
-                  setError("");
-
-                  setSuccess("");
-
-                }}
-
-                placeholder="Confirm new password"
-
-                autoComplete="new-password"
-
-                required
-
-              />
-
-
-              <button
-
-                type="button"
-
-                className="password-toggle"
-
-                onClick={() =>
-                  setShowConfirmPassword(
-                    !showConfirmPassword
-                  )
-                }
-
-              >
-
-                {showConfirmPassword
-                  ? "Hide"
-                  : "Show"
-                }
-
-              </button>
-
-            </div>
-
-          </div>
-
-
-          {/* =================================
-              ERROR
-          ================================= */}
-
-          {error && (
-
-            <div className="login-error-box">
+            <div className="settings-info-item">
 
               <span>
-                ⚠
+                Full Name
               </span>
 
+
+              <strong>
+                {user.fullName ||
+                  user.name ||
+                  "Not available"}
+              </strong>
+
+            </div>
+
+
+            {/* EMAIL */}
+
+            <div className="settings-info-item">
+
+              <span>
+                Email Address
+              </span>
+
+
+              <strong>
+                {user.email ||
+                  "Not available"}
+              </strong>
+
+            </div>
+
+
+            {/* PHONE */}
+
+            <div className="settings-info-item">
+
+              <span>
+                Phone Number
+              </span>
+
+
+              <strong>
+                {user.phone ||
+                  "Not available"}
+              </strong>
+
+            </div>
+
+
+            {/* ROLE */}
+
+            <div className="settings-info-item">
+
+              <span>
+                Account Type
+              </span>
+
+
+              <strong>
+                {user.role === "admin"
+                  ? "Administrator"
+                  : "Customer"}
+              </strong>
+
+            </div>
+
+
+          </div>
+
+        </div>
+
+
+        {/* ===================================
+            SECURITY
+        =================================== */}
+
+        <div className="dashboard-card">
+
+          <div className="dashboard-card-header">
+
+            <div>
+
+              <p className="summary-label">
+                SECURITY
+              </p>
+
+
+              <h2>
+                Change Password
+              </h2>
+
+
               <p>
-                {error}
+                Update your password to keep
+                your GLOWRY account secure.
               </p>
 
             </div>
 
-          )}
+          </div>
 
 
-          {/* =================================
-              SUCCESS
-          ================================= */}
-
-          {success && (
-
-            <p className="auth-success">
-
-              {success}
-
-            </p>
-
-          )}
-
-
-          {/* =================================
-              BUTTON
-          ================================= */}
-
-          <button
-
-            type="submit"
-
-            className="auth-button"
-
-            disabled={loading}
-
+          <form
+            className="auth-form settings-password-form"
+            onSubmit={
+              handleChangePassword
+            }
           >
 
-            {loading
-              ? "Updating Password..."
-              : "Reset Password"
-            }
 
-          </button>
+            {/* CURRENT PASSWORD */}
+
+            <div className="auth-field">
+
+              <label>
+                Current Password
+              </label>
 
 
-        </form>
+              <div className="password-input-wrapper">
+
+                <input
+
+                  type={
+                    showCurrentPassword
+                      ? "text"
+                      : "password"
+                  }
+
+                  value={
+                    currentPassword
+                  }
+
+                  onChange={(e) => {
+
+                    setCurrentPassword(
+                      e.target.value
+                    );
+
+                    setError("");
+                    setSuccess("");
+
+                  }}
+
+                  placeholder="Enter current password"
+
+                  autoComplete="current-password"
+
+                  required
+
+                />
 
 
-        {/* =================================
-            LOGIN LINK
-        ================================= */}
+                <button
 
-        <p className="auth-switch">
+                  type="button"
 
-          Remember your password?
+                  className="password-toggle"
 
-          {" "}
+                  onClick={() =>
+                    setShowCurrentPassword(
+                      !showCurrentPassword
+                    )
+                  }
 
-          <Link to="/login">
-            Login
-          </Link>
+                >
 
-        </p>
+                  {showCurrentPassword
+                    ? "Hide"
+                    : "Show"}
+
+                </button>
+
+              </div>
+
+            </div>
+
+
+            {/* NEW PASSWORD */}
+
+            <div className="auth-field">
+
+              <label>
+                New Password
+              </label>
+
+
+              <div className="password-input-wrapper">
+
+                <input
+
+                  type={
+                    showNewPassword
+                      ? "text"
+                      : "password"
+                  }
+
+                  value={
+                    newPassword
+                  }
+
+                  onChange={(e) => {
+
+                    setNewPassword(
+                      e.target.value
+                    );
+
+                    setError("");
+                    setSuccess("");
+
+                  }}
+
+                  placeholder="Enter new password"
+
+                  autoComplete="new-password"
+
+                  required
+
+                />
+
+
+                <button
+
+                  type="button"
+
+                  className="password-toggle"
+
+                  onClick={() =>
+                    setShowNewPassword(
+                      !showNewPassword
+                    )
+                  }
+
+                >
+
+                  {showNewPassword
+                    ? "Hide"
+                    : "Show"}
+
+                </button>
+
+              </div>
+
+            </div>
+
+
+            {/* CONFIRM PASSWORD */}
+
+            <div className="auth-field">
+
+              <label>
+                Confirm New Password
+              </label>
+
+
+              <div className="password-input-wrapper">
+
+                <input
+
+                  type={
+                    showConfirmPassword
+                      ? "text"
+                      : "password"
+                  }
+
+                  value={
+                    confirmPassword
+                  }
+
+                  onChange={(e) => {
+
+                    setConfirmPassword(
+                      e.target.value
+                    );
+
+                    setError("");
+                    setSuccess("");
+
+                  }}
+
+                  placeholder="Confirm new password"
+
+                  autoComplete="new-password"
+
+                  required
+
+                />
+
+
+                <button
+
+                  type="button"
+
+                  className="password-toggle"
+
+                  onClick={() =>
+                    setShowConfirmPassword(
+                      !showConfirmPassword
+                    )
+                  }
+
+                >
+
+                  {showConfirmPassword
+                    ? "Hide"
+                    : "Show"}
+
+                </button>
+
+              </div>
+
+            </div>
+
+
+            {/* ERROR */}
+
+            {error && (
+
+              <div className="login-error-box">
+
+                <span>
+                  ⚠
+                </span>
+
+
+                <p>
+                  {error}
+                </p>
+
+              </div>
+
+            )}
+
+
+            {/* SUCCESS */}
+
+            {success && (
+
+              <p className="auth-success">
+
+                {success}
+
+              </p>
+
+            )}
+
+
+            {/* BUTTON */}
+
+            <button
+
+              type="submit"
+
+              className="auth-button"
+
+              disabled={loading}
+
+            >
+
+              {loading
+                ? "Updating Password..."
+                : "Update Password"}
+
+            </button>
+
+
+          </form>
+
+        </div>
+
+
+        {/* ===================================
+            ACCOUNT ACTIONS
+        =================================== */}
+
+        <div className="dashboard-card">
+
+          <div className="dashboard-card-header">
+
+            <div>
+
+              <p className="summary-label">
+                ACCOUNT
+              </p>
+
+
+              <h2>
+                Account Actions
+              </h2>
+
+
+              <p>
+                Manage your current GLOWRY
+                account session.
+              </p>
+
+            </div>
+
+          </div>
+
+
+          <div className="settings-actions">
+
+
+            {/* PROFILE */}
+
+            <Link
+              to="/dashboard/profile"
+              className="dashboard-menu-item"
+            >
+
+              <div className="dashboard-menu-icon">
+                👤
+              </div>
+
+
+              <div className="dashboard-menu-text">
+
+                <strong>
+                  Edit Profile
+                </strong>
+
+
+                <span>
+                  Update your personal information
+                </span>
+
+              </div>
+
+
+              <span className="dashboard-arrow">
+                →
+              </span>
+
+            </Link>
+
+
+            {/* ADDRESSES */}
+
+            <Link
+              to="/dashboard/addresses"
+              className="dashboard-menu-item"
+            >
+
+              <div className="dashboard-menu-icon">
+                📍
+              </div>
+
+
+              <div className="dashboard-menu-text">
+
+                <strong>
+                  Manage Addresses
+                </strong>
+
+
+                <span>
+                  Add or update your delivery addresses
+                </span>
+
+              </div>
+
+
+              <span className="dashboard-arrow">
+                →
+              </span>
+
+            </Link>
+
+
+            {/* LOGOUT */}
+
+            <button
+              type="button"
+              className="dashboard-menu-item settings-logout-item"
+              onClick={handleLogout}
+            >
+
+              <div className="dashboard-menu-icon">
+                ↪
+              </div>
+
+
+              <div className="dashboard-menu-text">
+
+                <strong>
+                  Logout
+                </strong>
+
+
+                <span>
+                  Sign out from your GLOWRY account
+                </span>
+
+              </div>
+
+
+              <span className="dashboard-arrow">
+                →
+              </span>
+
+            </button>
+
+
+          </div>
+
+        </div>
 
 
       </section>
+
 
     </main>
 
@@ -462,5 +880,5 @@ function ResetPassword() {
 }
 
 
-export default ResetPassword;
+export default Settings;
 

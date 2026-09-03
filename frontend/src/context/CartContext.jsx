@@ -1,5 +1,3 @@
- /* eslint-disable react-refresh/only-export-components */
-
 import {
   createContext,
   useContext,
@@ -7,8 +5,11 @@ import {
   useState,
 } from "react";
 
-import axios from "axios";
-import { API_BASE_URL } from "../config/api";
+import apiClient from "../services/apiClient";
+
+import {
+  API_BASE_URL,
+} from "../config/api";
 
 // =========================================
 // CREATE CONTEXT
@@ -29,7 +30,9 @@ const API_URL = `${API_BASE_URL}/cart`;
 const getAuthData = () => {
   try {
     const token =
-      localStorage.getItem("glowryToken");
+      localStorage.getItem(
+        "glowryToken"
+      );
 
     const storedUser =
       localStorage.getItem(
@@ -63,30 +66,13 @@ const getAuthData = () => {
 };
 
 // =========================================
-// AUTH HEADERS
-// =========================================
-
-const getAuthHeaders = () => {
-  const { token } =
-    getAuthData();
-
-  if (!token) {
-    return {};
-  }
-
-  return {
-    Authorization:
-      `Bearer ${token}`,
-  };
-};
-
-// =========================================
 // CART PROVIDER
 // =========================================
 
 export function CartProvider({
   children,
 }) {
+
   // =======================================
   // CART
   // =======================================
@@ -123,11 +109,13 @@ export function CartProvider({
   // =======================================
 
   const showToast = (message) => {
+
     setToast(message);
 
     setTimeout(() => {
       setToast("");
     }, 2500);
+
   };
 
   // =======================================
@@ -137,6 +125,7 @@ export function CartProvider({
   const formatCart = (
     backendCart
   ) => {
+
     if (
       !backendCart ||
       !backendCart.items
@@ -150,11 +139,14 @@ export function CartProvider({
           item.product
       )
       .map((item) => {
+
         const product =
           item.product;
 
         return {
-          id: product._id,
+
+          id:
+            product._id,
 
           name:
             product.name,
@@ -174,7 +166,7 @@ export function CartProvider({
           originalPrice:
             Number(
               product.originalPrice ||
-                0
+              0
             ),
 
           image:
@@ -208,8 +200,11 @@ export function CartProvider({
             Number(
               item.quantity || 1
             ),
+
         };
+
       });
+
   };
 
   // =========================================
@@ -218,7 +213,9 @@ export function CartProvider({
 
   const fetchCart =
     async () => {
+
       try {
+
         setLoading(true);
 
         const {
@@ -234,8 +231,11 @@ export function CartProvider({
           !token ||
           !userId
         ) {
+
           setCart([]);
+
           return;
+
         }
 
         // ===================================
@@ -243,12 +243,8 @@ export function CartProvider({
         // ===================================
 
         const response =
-          await axios.get(
-            `${API_URL}/${userId}`,
-            {
-              headers:
-                getAuthHeaders(),
-            }
+          await apiClient.get(
+            `/cart/${userId}`
           );
 
         // ===================================
@@ -263,7 +259,9 @@ export function CartProvider({
         setCart(
           formattedCart
         );
+
       } catch (error) {
+
         console.error(
           "Fetch Cart Error:",
           error
@@ -277,13 +275,19 @@ export function CartProvider({
           error.response?.status ===
           401
         ) {
+
           console.warn(
             "Cart authentication failed. Please login again."
           );
+
         }
+
       } finally {
+
         setLoading(false);
+
       }
+
     };
 
   // =========================================
@@ -291,10 +295,13 @@ export function CartProvider({
   // =========================================
 
   useEffect(() => {
+
     // Initial cart synchronization
     // with the backend.
+
     // eslint-disable-next-line react-hooks/set-state-in-effect
     fetchCart();
+
   }, []);
 
   // =========================================
@@ -303,7 +310,9 @@ export function CartProvider({
 
   const addToCart =
     async (product) => {
+
       try {
+
         const {
           token,
           userId,
@@ -317,11 +326,13 @@ export function CartProvider({
           !token ||
           !userId
         ) {
+
           showToast(
             "Please login to add products to cart"
           );
 
           return false;
+
         }
 
         // ===================================
@@ -329,17 +340,14 @@ export function CartProvider({
         // ===================================
 
         const response =
-          await axios.post(
-            `${API_URL}/${userId}`,
+          await apiClient.post(
+            `/cart/${userId}`,
             {
               productId:
                 product.id,
 
-              quantity: 1,
-            },
-            {
-              headers:
-                getAuthHeaders(),
+              quantity:
+                1,
             }
           );
 
@@ -361,22 +369,29 @@ export function CartProvider({
         );
 
         return true;
+
       } catch (error) {
+
         if (
           error.response?.status ===
           401
         ) {
+
           showToast(
             "Please login again"
           );
+
         } else if (
           error.response?.status ===
           409
         ) {
+
           showToast(
             "Product is already in your cart 🛒"
           );
+
         } else {
+
           console.error(
             "Add To Cart Error:",
             error
@@ -385,10 +400,13 @@ export function CartProvider({
           showToast(
             "Failed to add product"
           );
+
         }
 
         return false;
+
       }
+
     };
 
   // =========================================
@@ -397,7 +415,9 @@ export function CartProvider({
 
   const increaseQuantity =
     async (productId) => {
+
       try {
+
         const {
           token,
           userId,
@@ -407,11 +427,13 @@ export function CartProvider({
           !token ||
           !userId
         ) {
+
           showToast(
             "Please login first"
           );
 
           return;
+
         }
 
         const product =
@@ -426,16 +448,12 @@ export function CartProvider({
         }
 
         const response =
-          await axios.put(
-            `${API_URL}/${userId}/${productId}`,
+          await apiClient.put(
+            `/cart/${userId}/${productId}`,
             {
               quantity:
                 product.quantity +
                 1,
-            },
-            {
-              headers:
-                getAuthHeaders(),
             }
           );
 
@@ -444,12 +462,16 @@ export function CartProvider({
             response.data
           )
         );
+
       } catch (error) {
+
         console.error(
           "Increase Quantity Error:",
           error
         );
+
       }
+
     };
 
   // =========================================
@@ -458,7 +480,9 @@ export function CartProvider({
 
   const decreaseQuantity =
     async (productId) => {
+
       try {
+
         const {
           token,
           userId,
@@ -468,11 +492,13 @@ export function CartProvider({
           !token ||
           !userId
         ) {
+
           showToast(
             "Please login first"
           );
 
           return;
+
         }
 
         const product =
@@ -493,24 +519,22 @@ export function CartProvider({
         if (
           product.quantity <= 1
         ) {
+
           await removeFromCart(
             productId
           );
 
           return;
+
         }
 
         const response =
-          await axios.put(
-            `${API_URL}/${userId}/${productId}`,
+          await apiClient.put(
+            `/cart/${userId}/${productId}`,
             {
               quantity:
                 product.quantity -
                 1,
-            },
-            {
-              headers:
-                getAuthHeaders(),
             }
           );
 
@@ -519,12 +543,16 @@ export function CartProvider({
             response.data
           )
         );
+
       } catch (error) {
+
         console.error(
           "Decrease Quantity Error:",
           error
         );
+
       }
+
     };
 
   // =========================================
@@ -533,7 +561,9 @@ export function CartProvider({
 
   const removeFromCart =
     async (productId) => {
+
       try {
+
         const {
           token,
           userId,
@@ -543,20 +573,18 @@ export function CartProvider({
           !token ||
           !userId
         ) {
+
           showToast(
             "Please login first"
           );
 
           return;
+
         }
 
         const response =
-          await axios.delete(
-            `${API_URL}/${userId}/${productId}`,
-            {
-              headers:
-                getAuthHeaders(),
-            }
+          await apiClient.delete(
+            `/cart/${userId}/${productId}`
           );
 
         setCart(
@@ -568,12 +596,16 @@ export function CartProvider({
         showToast(
           "Product removed from cart"
         );
+
       } catch (error) {
+
         console.error(
           "Remove Cart Error:",
           error
         );
+
       }
+
     };
 
   // =========================================
@@ -582,7 +614,9 @@ export function CartProvider({
 
   const clearCart =
     async () => {
+
       try {
+
         const {
           token,
           userId,
@@ -592,16 +626,15 @@ export function CartProvider({
           !token ||
           !userId
         ) {
+
           setCart([]);
+
           return;
+
         }
 
-        await axios.delete(
-          `${API_URL}/${userId}`,
-          {
-            headers:
-              getAuthHeaders(),
-          }
+        await apiClient.delete(
+          `/cart/${userId}`
         );
 
         setCart([]);
@@ -609,12 +642,16 @@ export function CartProvider({
         setCoupon(null);
 
         setDiscount(0);
+
       } catch (error) {
+
         console.error(
           "Clear Cart Error:",
           error
         );
+
       }
+
     };
 
   // =========================================
@@ -653,65 +690,87 @@ export function CartProvider({
   // =========================================
 
   const availableCoupons = [
-    {
-      code: "GLOW10",
 
-      title: "10% OFF",
+    {
+      code:
+        "GLOW10",
+
+      title:
+        "10% OFF",
 
       description:
         "Get 10% off on orders above ₹699",
 
-      minimum: 699,
+      minimum:
+        699,
 
-      type: "percentage",
+      type:
+        "percentage",
 
-      value: 10,
+      value:
+        10,
     },
 
     {
-      code: "WELCOME100",
+      code:
+        "WELCOME100",
 
-      title: "₹100 OFF",
+      title:
+        "₹100 OFF",
 
       description:
         "First order above ₹999",
 
-      minimum: 999,
+      minimum:
+        999,
 
-      type: "fixed",
+      type:
+        "fixed",
 
-      value: 100,
+      value:
+        100,
     },
 
     {
-      code: "SKIN15",
+      code:
+        "SKIN15",
 
-      title: "15% OFF",
+      title:
+        "15% OFF",
 
       description:
         "Get 15% off on orders above ₹1,499",
 
-      minimum: 1499,
+      minimum:
+        1499,
 
-      type: "percentage",
+      type:
+        "percentage",
 
-      value: 15,
+      value:
+        15,
     },
 
     {
-      code: "GLOW20",
+      code:
+        "GLOW20",
 
-      title: "20% OFF",
+      title:
+        "20% OFF",
 
       description:
         "Get 20% off on orders above ₹1,999",
 
-      minimum: 1999,
+      minimum:
+        1999,
 
-      type: "percentage",
+      type:
+        "percentage",
 
-      value: 20,
+      value:
+        20,
     },
+
   ];
 
   // =========================================
@@ -720,6 +779,7 @@ export function CartProvider({
 
   const applyCoupon =
     (couponCode) => {
+
       const code =
         String(
           couponCode || ""
@@ -728,31 +788,37 @@ export function CartProvider({
           .toUpperCase();
 
       if (!code) {
+
         showToast(
           "Please enter a coupon code 🎟️"
         );
 
         return false;
+
       }
 
       if (
         cart.length === 0
       ) {
+
         showToast(
           "Add products before applying a coupon"
         );
 
         return false;
+
       }
 
       if (
         coupon === code
       ) {
+
         showToast(
           "This coupon is already applied"
         );
 
         return false;
+
       }
 
       const selectedCoupon =
@@ -762,17 +828,20 @@ export function CartProvider({
         );
 
       if (!selectedCoupon) {
+
         showToast(
           "Invalid or expired coupon code"
         );
 
         return false;
+
       }
 
       if (
         cartTotal <
         selectedCoupon.minimum
       ) {
+
         const remaining =
           selectedCoupon.minimum -
           cartTotal;
@@ -782,6 +851,7 @@ export function CartProvider({
         );
 
         return false;
+
       }
 
       // ===================================
@@ -792,6 +862,7 @@ export function CartProvider({
         selectedCoupon.code ===
         "WELCOME100"
       ) {
+
         const existingOrders =
           JSON.parse(
             localStorage.getItem(
@@ -803,12 +874,15 @@ export function CartProvider({
           existingOrders.length >
           0
         ) {
+
           showToast(
             "WELCOME100 is for first orders only"
           );
 
           return false;
+
         }
+
       }
 
       // ===================================
@@ -818,11 +892,15 @@ export function CartProvider({
       const discountAmount =
         selectedCoupon.type ===
         "percentage"
+
           ? Math.round(
               cartTotal *
-                (selectedCoupon.value /
-                  100)
+                (
+                  selectedCoupon.value /
+                  100
+                )
             )
+
           : selectedCoupon.value;
 
       setCoupon(
@@ -838,6 +916,7 @@ export function CartProvider({
       );
 
       return true;
+
     };
 
   // =========================================
@@ -846,6 +925,7 @@ export function CartProvider({
 
   const removeCoupon =
     () => {
+
       setCoupon(null);
 
       setDiscount(0);
@@ -853,6 +933,7 @@ export function CartProvider({
       showToast(
         "Coupon removed"
       );
+
     };
 
   // =========================================
@@ -862,7 +943,8 @@ export function CartProvider({
   const finalTotal =
     Math.max(
       0,
-      cartTotal - discount
+      cartTotal -
+        discount
     );
 
   // =========================================
@@ -870,8 +952,10 @@ export function CartProvider({
   // =========================================
 
   return (
+
     <CartContext.Provider
       value={{
+
         cart,
 
         loading,
@@ -903,11 +987,16 @@ export function CartProvider({
         applyCoupon,
 
         removeCoupon,
+
       }}
     >
+
       {children}
+
     </CartContext.Provider>
+
   );
+
 }
 
 // =========================================
@@ -915,7 +1004,10 @@ export function CartProvider({
 // =========================================
 
 export function useCart() {
+
   return useContext(
     CartContext
   );
+
 }
+

@@ -1,4 +1,3 @@
-/* eslint-disable react-refresh/only-export-components */
 
 import {
   createContext,
@@ -7,7 +6,7 @@ import {
   useState,
 } from "react";
 
-import axios from "axios";
+import apiClient from "../services/apiClient";
 import { API_BASE_URL } from "../config/api";
 
 // =========================================
@@ -200,14 +199,8 @@ export function WishlistProvider({
         // =================================
 
         const response =
-          await axios.get(
-            `${API_URL}/${user.id}`,
-            {
-              headers: {
-                Authorization:
-                  `Bearer ${token}`,
-              },
-            }
+          await apiClient.get(
+            `/wishlist/${user.id}`
           );
 
         // =================================
@@ -293,8 +286,8 @@ export function WishlistProvider({
         // =================================
 
         const response =
-          await axios.post(
-            `${API_URL}/${user.id}`,
+          await apiClient.post(
+            `/wishlist/${user.id}`,
             {
               product:
                 product.id,
@@ -324,12 +317,6 @@ export function WishlistProvider({
                 Number(
                   product.rating || 0
                 ),
-            },
-            {
-              headers: {
-                Authorization:
-                  `Bearer ${token}`,
-              },
             }
           );
 
@@ -432,14 +419,8 @@ export function WishlistProvider({
         // =================================
 
         const response =
-          await axios.delete(
-            `${API_URL}/${user.id}/${productId}`,
-            {
-              headers: {
-                Authorization:
-                  `Bearer ${token}`,
-              },
-            }
+          await apiClient.delete(
+            `/wishlist/${user.id}/${productId}`
           );
 
         // =================================

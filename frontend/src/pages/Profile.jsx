@@ -1,4 +1,3 @@
-
 import {
   useCallback,
   useEffect,
@@ -6,11 +5,8 @@ import {
 } from "react";
 
 import { useNavigate } from "react-router-dom";
-import axios from "axios";
 
-import {
-  API_BASE_URL,
-} from "../config/api";
+import apiClient from "../services/apiClient";
 
 
 function Profile() {
@@ -78,17 +74,8 @@ function Profile() {
         // =====================================
 
         const response =
-          await axios.get(
-
-            `${API_BASE_URL}/auth/profile/${userId}`,
-
-            {
-              headers: {
-                Authorization:
-                  `Bearer ${token}`,
-              },
-            }
-
+          await apiClient.get(
+            `/auth/profile/${userId}`
           );
 
 
@@ -378,9 +365,9 @@ function Profile() {
       // =====================================
 
       const response =
-        await axios.put(
+        await apiClient.put(
 
-          `${API_BASE_URL}/auth/profile/${user.id}`,
+          `/auth/profile/${user.id}`,
 
           {
 
@@ -392,17 +379,6 @@ function Profile() {
 
             phone:
               user.phone.trim(),
-
-          },
-
-          {
-
-            headers: {
-
-              Authorization:
-                `Bearer ${token}`,
-
-            },
 
           }
 
@@ -1106,4 +1082,3 @@ function Profile() {
 
 
 export default Profile;
-

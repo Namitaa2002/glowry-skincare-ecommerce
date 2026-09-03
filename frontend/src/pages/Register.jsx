@@ -1,3 +1,4 @@
+
 import {
   Link,
   useNavigate,
@@ -7,11 +8,7 @@ import {
   useState,
 } from "react";
 
-import axios from "axios";
-
-import {
-  API_BASE_URL,
-} from "../config/api";
+import apiClient from "../services/apiClient";
 
 
 function Register() {
@@ -123,13 +120,37 @@ function Register() {
 
 
     // =======================================
-    // PASSWORD LENGTH
+    // EMAIL VALIDATION
     // =======================================
 
-    if (password.length < 6) {
+    if (
+      !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(
+        email.trim()
+      )
+    ) {
 
       setError(
-        "Password must be at least 6 characters."
+        "Please enter a valid email address."
+      );
+
+      return;
+
+    }
+
+
+    // =======================================
+    // PASSWORD VALIDATION
+    // =======================================
+
+    const passwordRegex =
+      /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d).{8,}$/;
+
+    if (
+      !passwordRegex.test(password)
+    ) {
+
+      setError(
+        "Password must be at least 8 characters long and contain at least one uppercase letter, one lowercase letter, and one number."
       );
 
       return;
@@ -168,29 +189,19 @@ function Register() {
       // REGISTER USER
       // =====================================
 
-      const response =
-        await axios.post(
+      await apiClient.post(
+        "/auth/register",
+        {
 
-          `${API_BASE_URL}/auth/register`,
+          name:
+            fullName.trim(),
 
-          {
+          email:
+            email.trim().toLowerCase(),
 
-            name:
-              fullName.trim(),
+          password,
 
-            email:
-              email.trim().toLowerCase(),
-
-            password,
-
-          }
-
-        );
-
-
-      console.log(
-        "Register Response:",
-        response.data
+        }
       );
 
 
@@ -341,6 +352,8 @@ function Register() {
 
               autoComplete="name"
 
+              disabled={loading}
+
               required
 
             />
@@ -375,6 +388,8 @@ function Register() {
               placeholder="Enter your email"
 
               autoComplete="email"
+
+              disabled={loading}
 
               required
 
@@ -411,6 +426,8 @@ function Register() {
 
               autoComplete="new-password"
 
+              disabled={loading}
+
               required
 
             />
@@ -445,6 +462,8 @@ function Register() {
               placeholder="Confirm password"
 
               autoComplete="new-password"
+
+              disabled={loading}
 
               required
 
@@ -535,3 +554,4 @@ function Register() {
 
 
 export default Register;
+
