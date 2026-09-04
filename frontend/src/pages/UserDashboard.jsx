@@ -2,8 +2,8 @@
 import { Link, useNavigate } from "react-router-dom";
 import { useEffect, useState } from "react";
 
-import { useCart } from "../context/CartContext";
-import { useWishlist } from "../context/WishlistContext";
+import { useCart } from "../context/useCart";
+import { useWishlist } from "../context/useWishlist";
 
 
 function UserDashboard() {

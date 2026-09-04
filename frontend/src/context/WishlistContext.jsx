@@ -1,27 +1,17 @@
-
 import {
-  createContext,
-  useContext,
+  useCallback,
   useEffect,
   useState,
 } from "react";
 
+import { WishlistContext } from "./WishlistContextValue";
+
 import apiClient from "../services/apiClient";
-import { API_BASE_URL } from "../config/api";
 
-// =========================================
-// CREATE CONTEXT
-// =========================================
+import {
+  API_BASE_URL,
+} from "../config/api";
 
-const WishlistContext =
-  createContext();
-
-// =========================================
-// API URL
-// =========================================
-
-const API_URL =
-  `${API_BASE_URL}/wishlist`;
 
 // =========================================
 // GET AUTH DATA
@@ -29,6 +19,7 @@ const API_URL =
 
 const getAuthData = () => {
   try {
+
     const token =
       localStorage.getItem(
         "glowryToken"
@@ -48,7 +39,9 @@ const getAuthData = () => {
       token,
       user,
     };
+
   } catch (error) {
+
     console.error(
       "Auth Data Error:",
       error
@@ -58,8 +51,10 @@ const getAuthData = () => {
       token: null,
       user: null,
     };
+
   }
 };
+
 
 // =========================================
 // FORMAT BACKEND WISHLIST
@@ -68,6 +63,7 @@ const getAuthData = () => {
 const formatWishlist = (
   data
 ) => {
+
   if (
     !data ||
     !data.items
@@ -77,6 +73,7 @@ const formatWishlist = (
 
   return data.items.map(
     (item) => ({
+
       id:
         item.product?._id ||
         item.product,
@@ -118,9 +115,12 @@ const formatWishlist = (
         Number(
           item.rating || 0
         ),
+
     })
   );
+
 };
+
 
 // =========================================
 // WISHLIST PROVIDER
@@ -129,12 +129,14 @@ const formatWishlist = (
 export function WishlistProvider({
   children,
 }) {
+
   // =======================================
   // WISHLIST
   // =======================================
 
   const [wishlist, setWishlist] =
     useState([]);
+
 
   // =======================================
   // LOADING
@@ -143,12 +145,14 @@ export function WishlistProvider({
   const [loading, setLoading] =
     useState(true);
 
+
   // =======================================
   // TOAST
   // =======================================
 
   const [toast, setToast] =
     useState("");
+
 
   // =======================================
   // SHOW TOAST
@@ -157,98 +161,132 @@ export function WishlistProvider({
   const showToast = (
     message
   ) => {
+
     setToast(message);
 
     setTimeout(() => {
       setToast("");
     }, 2500);
+
   };
+
 
   // =======================================
   // FETCH WISHLIST
   // =======================================
 
   const fetchWishlist =
-    async () => {
-      try {
-        setLoading(true);
+    useCallback(
+      async () => {
 
-        // =================================
-        // GET AUTH DATA
-        // =================================
+        try {
 
-        const {
-          token,
-          user,
-        } = getAuthData();
+          setLoading(true);
 
-        // =================================
-        // CHECK LOGIN
-        // =================================
 
-        if (
-          !token ||
-          !user?.id
-        ) {
-          setWishlist([]);
-          return;
-        }
+          // =================================
+          // GET AUTH DATA
+          // =================================
 
-        // =================================
-        // GET WISHLIST
-        // =================================
+          const {
+            token,
+            user,
+          } = getAuthData();
 
-        const response =
-          await apiClient.get(
-            `/wishlist/${user.id}`
+
+          // =================================
+          // CHECK LOGIN
+          // =================================
+
+          if (
+            !token ||
+            !user?.id
+          ) {
+
+            setWishlist([]);
+
+            return;
+
+          }
+
+
+          // =================================
+          // GET WISHLIST
+          // =================================
+
+          const response =
+            await apiClient.get(
+              `/wishlist/${user.id}`
+            );
+
+
+          // =================================
+          // FORMAT RESPONSE
+          // =================================
+
+          setWishlist(
+            formatWishlist(
+              response.data
+            )
           );
 
-        // =================================
-        // FORMAT RESPONSE
-        // =================================
+        } catch (error) {
 
-        setWishlist(
-          formatWishlist(
-            response.data
-          )
-        );
-      } catch (error) {
-        console.error(
-          "Fetch Wishlist Error:",
-          error
-        );
-
-        // =================================
-        // UNAUTHORIZED
-        // =================================
-
-        if (
-          error.response?.status ===
-            401 ||
-          error.response?.status ===
-            403
-        ) {
-          setWishlist([]);
-        } else {
-          showToast(
-            "Failed to load wishlist"
+          console.error(
+            "Fetch Wishlist Error:",
+            error
           );
+
+
+          // =================================
+          // UNAUTHORIZED
+          // =================================
+
+          if (
+            error.response?.status ===
+              401 ||
+            error.response?.status ===
+              403
+          ) {
+
+            setWishlist([]);
+
+          } else {
+
+            showToast(
+              "Failed to load wishlist"
+            );
+
+          }
+
+        } finally {
+
+          setLoading(false);
+
         }
-      } finally {
-        setLoading(false);
-      }
-    };
+
+      },
+      []
+    );
+
 
   // =======================================
   // LOAD WISHLIST
   // =======================================
 
   useEffect(() => {
-    // Initial wishlist synchronization
-    // with the backend.
-    // eslint-disable-next-line react-hooks/set-state-in-effect
-    fetchWishlist();
-  }, []);
+
+    const timer =
+      setTimeout(() => {
+        fetchWishlist();
+      }, 0);
+
+    return () => {
+      clearTimeout(timer);
+    };
+
+  }, [fetchWishlist]);
+
 
   // =======================================
   // ADD TO WISHLIST
@@ -256,7 +294,9 @@ export function WishlistProvider({
 
   const addToWishlist =
     async (product) => {
+
       try {
+
         // =================================
         // GET AUTH DATA
         // =================================
@@ -266,6 +306,7 @@ export function WishlistProvider({
           user,
         } = getAuthData();
 
+
         // =================================
         // CHECK LOGIN
         // =================================
@@ -274,12 +315,15 @@ export function WishlistProvider({
           !token ||
           !user?.id
         ) {
+
           showToast(
             "Please login to add products to wishlist"
           );
 
           return false;
+
         }
+
 
         // =================================
         // ADD PRODUCT
@@ -289,6 +333,7 @@ export function WishlistProvider({
           await apiClient.post(
             `/wishlist/${user.id}`,
             {
+
               product:
                 product.id,
 
@@ -306,7 +351,7 @@ export function WishlistProvider({
               originalPrice:
                 Number(
                   product.originalPrice ||
-                    0
+                  0
                 ),
 
               category:
@@ -317,8 +362,10 @@ export function WishlistProvider({
                 Number(
                   product.rating || 0
                 ),
+
             }
           );
+
 
         // =================================
         // UPDATE WISHLIST
@@ -335,7 +382,9 @@ export function WishlistProvider({
         );
 
         return true;
+
       } catch (error) {
+
         // =================================
         // DUPLICATE PRODUCT
         // =================================
@@ -344,10 +393,13 @@ export function WishlistProvider({
           error.response?.status ===
           409
         ) {
+
           showToast(
             "Product is already in wishlist ♡"
           );
+
         }
+
 
         // =================================
         // UNAUTHORIZED
@@ -359,16 +411,20 @@ export function WishlistProvider({
           error.response?.status ===
             403
         ) {
+
           showToast(
             "Please login to manage your wishlist"
           );
+
         }
+
 
         // =================================
         // OTHER ERROR
         // =================================
 
         else {
+
           console.error(
             "Add Wishlist Error:",
             error
@@ -377,11 +433,15 @@ export function WishlistProvider({
           showToast(
             "Failed to add to wishlist"
           );
+
         }
 
         return false;
+
       }
+
     };
+
 
   // =======================================
   // REMOVE FROM WISHLIST
@@ -389,7 +449,9 @@ export function WishlistProvider({
 
   const removeFromWishlist =
     async (productId) => {
+
       try {
+
         // =================================
         // GET AUTH DATA
         // =================================
@@ -399,6 +461,7 @@ export function WishlistProvider({
           user,
         } = getAuthData();
 
+
         // =================================
         // CHECK LOGIN
         // =================================
@@ -407,12 +470,15 @@ export function WishlistProvider({
           !token ||
           !user?.id
         ) {
+
           showToast(
             "Please login to manage your wishlist"
           );
 
           return false;
+
         }
+
 
         // =================================
         // DELETE PRODUCT
@@ -422,6 +488,7 @@ export function WishlistProvider({
           await apiClient.delete(
             `/wishlist/${user.id}/${productId}`
           );
+
 
         // =================================
         // UPDATE WISHLIST
@@ -439,7 +506,9 @@ export function WishlistProvider({
         );
 
         return true;
+
       } catch (error) {
+
         // =================================
         // UNAUTHORIZED
         // =================================
@@ -450,16 +519,20 @@ export function WishlistProvider({
           error.response?.status ===
             403
         ) {
+
           showToast(
             "Please login to manage your wishlist"
           );
+
         }
+
 
         // =================================
         // OTHER ERROR
         // =================================
 
         else {
+
           console.error(
             "Remove Wishlist Error:",
             error
@@ -468,11 +541,15 @@ export function WishlistProvider({
           showToast(
             "Failed to remove product"
           );
+
         }
 
         return false;
+
       }
+
     };
+
 
   // =======================================
   // TOGGLE WISHLIST
@@ -480,9 +557,11 @@ export function WishlistProvider({
 
   const toggleWishlist =
     async (product) => {
+
       const productId =
         product.id ||
         product.productId;
+
 
       const alreadyExists =
         wishlist.some(
@@ -491,16 +570,22 @@ export function WishlistProvider({
             String(productId)
         );
 
+
       if (alreadyExists) {
+
         return await removeFromWishlist(
           productId
         );
+
       }
+
 
       return await addToWishlist(
         product
       );
+
     };
+
 
   // =======================================
   // CHECK WISHLIST
@@ -508,20 +593,25 @@ export function WishlistProvider({
 
   const isInWishlist =
     (productId) => {
+
       return wishlist.some(
         (item) =>
           String(item.id) ===
           String(productId)
       );
+
     };
+
 
   // =======================================
   // PROVIDER
   // =======================================
 
   return (
+
     <WishlistContext.Provider
       value={{
+
         wishlist,
 
         loading,
@@ -537,19 +627,14 @@ export function WishlistProvider({
         isInWishlist,
 
         fetchWishlist,
+
       }}
     >
+
       {children}
+
     </WishlistContext.Provider>
-  );
-}
 
-// =========================================
-// CUSTOM HOOK
-// =========================================
-
-export function useWishlist() {
-  return useContext(
-    WishlistContext
   );
+
 }

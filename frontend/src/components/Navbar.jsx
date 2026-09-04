@@ -11,7 +11,7 @@ import {
 
 import {
   useCart,
-} from "../context/CartContext";
+} from "../context/useCart";
 
 
 function Navbar() {

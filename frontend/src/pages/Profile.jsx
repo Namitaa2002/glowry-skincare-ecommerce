@@ -1,3 +1,4 @@
+
 import {
   useCallback,
   useEffect,
@@ -255,7 +256,15 @@ function Profile() {
       // FETCH REAL PROFILE FROM DATABASE
       // =====================================
 
-      fetchProfile(userId);
+      const timer =
+        setTimeout(() => {
+          fetchProfile(userId);
+        }, 0);
+
+
+      return () => {
+        clearTimeout(timer);
+      };
 
 
     } catch (error) {
@@ -1082,3 +1091,4 @@ function Profile() {
 
 
 export default Profile;
+

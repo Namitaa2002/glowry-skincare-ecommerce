@@ -41,8 +41,11 @@ import { WishlistProvider } from "./context/WishlistContext";
 
 import {
   CartProvider,
-  useCart,
 } from "./context/CartContext";
+
+import {
+  useCart,
+} from "./context/useCart";
 
 
 // =========================================

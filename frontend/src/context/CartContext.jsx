@@ -1,9 +1,10 @@
 import {
-  createContext,
-  useContext,
+  useCallback,
   useEffect,
   useState,
 } from "react";
+
+import { CartContext } from "./CartContextValue";
 
 import apiClient from "../services/apiClient";
 
@@ -11,17 +12,7 @@ import {
   API_BASE_URL,
 } from "../config/api";
 
-// =========================================
-// CREATE CONTEXT
-// =========================================
 
-const CartContext = createContext();
-
-// =========================================
-// API URL
-// =========================================
-
-const API_URL = `${API_BASE_URL}/cart`;
 
 // =========================================
 // GET AUTH DATA
@@ -65,6 +56,97 @@ const getAuthData = () => {
   }
 };
 
+
+// =========================================
+// FORMAT BACKEND CART
+// =========================================
+
+const formatCart = (
+  backendCart
+) => {
+
+  if (
+    !backendCart ||
+    !backendCart.items
+  ) {
+    return [];
+  }
+
+  return backendCart.items
+    .filter(
+      (item) =>
+        item.product
+    )
+    .map((item) => {
+
+      const product =
+        item.product;
+
+      return {
+
+        id:
+          product._id,
+
+        name:
+          product.name,
+
+        category:
+          product.category,
+
+        skinTypes:
+          product.skinTypes ||
+          [],
+
+        price:
+          Number(
+            product.price || 0
+          ),
+
+        originalPrice:
+          Number(
+            product.originalPrice ||
+            0
+          ),
+
+        image:
+          product.image
+            ? `${API_BASE_URL.replace(
+                "/api",
+                ""
+              )}${product.image}`
+            : "",
+
+        rating:
+          Number(
+            product.rating || 0
+          ),
+
+        reviews:
+          Number(
+            product.reviews || 0
+          ),
+
+        description:
+          product.description ||
+          "",
+
+        stock:
+          Number(
+            product.stock || 0
+          ),
+
+        quantity:
+          Number(
+            item.quantity || 1
+          ),
+
+      };
+
+    });
+
+};
+
+
 // =========================================
 // CART PROVIDER
 // =========================================
@@ -80,6 +162,7 @@ export function CartProvider({
   const [cart, setCart] =
     useState([]);
 
+
   // =======================================
   // LOADING
   // =======================================
@@ -87,12 +170,14 @@ export function CartProvider({
   const [loading, setLoading] =
     useState(true);
 
+
   // =======================================
   // TOAST
   // =======================================
 
   const [toast, setToast] =
     useState("");
+
 
   // =======================================
   // COUPON
@@ -104,11 +189,14 @@ export function CartProvider({
   const [discount, setDiscount] =
     useState(0);
 
+
   // =======================================
   // SHOW TOAST
   // =======================================
 
-  const showToast = (message) => {
+  const showToast = (
+    message
+  ) => {
 
     setToast(message);
 
@@ -118,177 +206,97 @@ export function CartProvider({
 
   };
 
-  // =======================================
-  // FORMAT BACKEND CART
-  // =======================================
-
-  const formatCart = (
-    backendCart
-  ) => {
-
-    if (
-      !backendCart ||
-      !backendCart.items
-    ) {
-      return [];
-    }
-
-    return backendCart.items
-      .filter(
-        (item) =>
-          item.product
-      )
-      .map((item) => {
-
-        const product =
-          item.product;
-
-        return {
-
-          id:
-            product._id,
-
-          name:
-            product.name,
-
-          category:
-            product.category,
-
-          skinTypes:
-            product.skinTypes ||
-            [],
-
-          price:
-            Number(
-              product.price || 0
-            ),
-
-          originalPrice:
-            Number(
-              product.originalPrice ||
-              0
-            ),
-
-          image:
-            product.image
-              ? `${API_BASE_URL.replace(
-                  "/api",
-                  ""
-                )}${product.image}`
-              : "",
-
-          rating:
-            Number(
-              product.rating || 0
-            ),
-
-          reviews:
-            Number(
-              product.reviews || 0
-            ),
-
-          description:
-            product.description ||
-            "",
-
-          stock:
-            Number(
-              product.stock || 0
-            ),
-
-          quantity:
-            Number(
-              item.quantity || 1
-            ),
-
-        };
-
-      });
-
-  };
 
   // =========================================
   // FETCH CART
   // =========================================
 
   const fetchCart =
-    async () => {
+    useCallback(
+      async () => {
 
-      try {
+        try {
 
-        setLoading(true);
+          setLoading(true);
 
-        const {
-          token,
-          userId,
-        } = getAuthData();
+          const {
+            token,
+            userId,
+          } = getAuthData();
 
-        // ===================================
-        // AUTH CHECK
-        // ===================================
 
-        if (
-          !token ||
-          !userId
-        ) {
+          // =================================
+          // AUTH CHECK
+          // =================================
 
-          setCart([]);
+          if (
+            !token ||
+            !userId
+          ) {
 
-          return;
+            setCart([]);
+
+            return;
+
+          }
+
+
+          // =================================
+          // GET CART
+          // =================================
+
+          const response =
+            await apiClient.get(
+              `/cart/${userId}`
+            );
+
+
+          // =================================
+          // FORMAT CART
+          // =================================
+
+          const formattedCart =
+            formatCart(
+              response.data
+            );
+
+          setCart(
+            formattedCart
+          );
+
+        } catch (error) {
+
+          console.error(
+            "Fetch Cart Error:",
+            error
+          );
+
+
+          // ===============================
+          // UNAUTHORIZED
+          // ===============================
+
+          if (
+            error.response?.status ===
+            401
+          ) {
+
+            console.warn(
+              "Cart authentication failed. Please login again."
+            );
+
+          }
+
+        } finally {
+
+          setLoading(false);
 
         }
 
-        // ===================================
-        // GET CART
-        // ===================================
+      },
+      []
+    );
 
-        const response =
-          await apiClient.get(
-            `/cart/${userId}`
-          );
-
-        // ===================================
-        // FORMAT CART
-        // ===================================
-
-        const formattedCart =
-          formatCart(
-            response.data
-          );
-
-        setCart(
-          formattedCart
-        );
-
-      } catch (error) {
-
-        console.error(
-          "Fetch Cart Error:",
-          error
-        );
-
-        // ===================================
-        // UNAUTHORIZED
-        // ===================================
-
-        if (
-          error.response?.status ===
-          401
-        ) {
-
-          console.warn(
-            "Cart authentication failed. Please login again."
-          );
-
-        }
-
-      } finally {
-
-        setLoading(false);
-
-      }
-
-    };
 
   // =========================================
   // LOAD CART
@@ -296,13 +304,17 @@ export function CartProvider({
 
   useEffect(() => {
 
-    // Initial cart synchronization
-    // with the backend.
+    const timer =
+      setTimeout(() => {
+        fetchCart();
+      }, 0);
 
-    // eslint-disable-next-line react-hooks/set-state-in-effect
-    fetchCart();
+    return () => {
+      clearTimeout(timer);
+    };
 
-  }, []);
+  }, [fetchCart]);
+
 
   // =========================================
   // ADD TO CART
@@ -318,9 +330,10 @@ export function CartProvider({
           userId,
         } = getAuthData();
 
-        // ===================================
+
+        // =================================
         // AUTH CHECK
-        // ===================================
+        // =================================
 
         if (
           !token ||
@@ -335,9 +348,10 @@ export function CartProvider({
 
         }
 
-        // ===================================
+
+        // =================================
         // ADD PRODUCT
-        // ===================================
+        // =================================
 
         const response =
           await apiClient.post(
@@ -351,9 +365,10 @@ export function CartProvider({
             }
           );
 
-        // ===================================
+
+        // =================================
         // UPDATE CART
-        // ===================================
+        // =================================
 
         const formattedCart =
           formatCart(
@@ -408,6 +423,7 @@ export function CartProvider({
       }
 
     };
+
 
   // =========================================
   // INCREASE QUANTITY
@@ -474,6 +490,7 @@ export function CartProvider({
 
     };
 
+
   // =========================================
   // DECREASE QUANTITY
   // =========================================
@@ -512,9 +529,10 @@ export function CartProvider({
           return;
         }
 
-        // ===================================
+
+        // =================================
         // REMOVE IF QUANTITY IS 1
-        // ===================================
+        // =================================
 
         if (
           product.quantity <= 1
@@ -554,6 +572,7 @@ export function CartProvider({
       }
 
     };
+
 
   // =========================================
   // REMOVE FROM CART
@@ -608,6 +627,7 @@ export function CartProvider({
 
     };
 
+
   // =========================================
   // CLEAR CART
   // =========================================
@@ -654,6 +674,7 @@ export function CartProvider({
 
     };
 
+
   // =========================================
   // CART COUNT
   // =========================================
@@ -667,6 +688,7 @@ export function CartProvider({
         ),
       0
     );
+
 
   // =========================================
   // CART TOTAL
@@ -684,6 +706,7 @@ export function CartProvider({
           ),
       0
     );
+
 
   // =========================================
   // AVAILABLE COUPONS
@@ -773,6 +796,7 @@ export function CartProvider({
 
   ];
 
+
   // =========================================
   // APPLY COUPON
   // =========================================
@@ -787,6 +811,7 @@ export function CartProvider({
           .trim()
           .toUpperCase();
 
+
       if (!code) {
 
         showToast(
@@ -796,6 +821,7 @@ export function CartProvider({
         return false;
 
       }
+
 
       if (
         cart.length === 0
@@ -854,9 +880,9 @@ export function CartProvider({
 
       }
 
-      // ===================================
+      // =====================================
       // FIRST ORDER COUPON
-      // ===================================
+      // =====================================
 
       if (
         selectedCoupon.code ===
@@ -885,9 +911,9 @@ export function CartProvider({
 
       }
 
-      // ===================================
+      // =====================================
       // CALCULATE DISCOUNT
-      // ===================================
+      // =====================================
 
       const discountAmount =
         selectedCoupon.type ===
@@ -955,37 +981,21 @@ export function CartProvider({
 
     <CartContext.Provider
       value={{
-
         cart,
-
         loading,
-
         addToCart,
-
         increaseQuantity,
-
         decreaseQuantity,
-
         removeFromCart,
-
         clearCart,
-
         cartCount,
-
         cartTotal,
-
         toast,
-
         coupon,
-
         discount,
-
         finalTotal,
-
         availableCoupons,
-
         applyCoupon,
-
         removeCoupon,
 
       }}
@@ -998,16 +1008,3 @@ export function CartProvider({
   );
 
 }
-
-// =========================================
-// CUSTOM HOOK
-// =========================================
-
-export function useCart() {
-
-  return useContext(
-    CartContext
-  );
-
-}
-

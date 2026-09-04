@@ -5,6 +5,7 @@ import {
 } from "react-router-dom";
 
 import {
+  useCallback,
   useEffect,
   useState,
 } from "react";
@@ -17,11 +18,11 @@ import {
 
 import {
   useCart,
-} from "../context/CartContext";
+} from "../context/useCart";
 
 import {
   useWishlist,
-} from "../context/WishlistContext";
+} from "../context/useWishlist";
 
 import ProductGallery from "../components/product-details/ProductGallery";
 
@@ -242,7 +243,8 @@ function ProductDetails() {
   // FETCH REVIEWS
   // =========================================
 
-  const fetchReviews = async () => {
+  const fetchReviews = useCallback(
+  async () => {
 
     try {
 
@@ -277,7 +279,9 @@ function ProductDetails() {
 
     }
 
-  };
+  },
+  [id]
+);
 
 
   // =========================================
@@ -286,11 +290,20 @@ function ProductDetails() {
 
   useEffect(() => {
 
-    if (id) {
-      fetchReviews();
-    }
+  const timer =
+    setTimeout(() => {
 
-  }, [id]);
+      if (id) {
+        fetchReviews();
+      }
+
+    }, 0);
+
+  return () => {
+    clearTimeout(timer);
+  };
+
+}, [id, fetchReviews]);
 
 
   // =========================================

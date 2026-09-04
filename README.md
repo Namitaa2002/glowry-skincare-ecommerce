@@ -2,7 +2,7 @@
 
 **GLOWRY** is a full-stack skincare e-commerce web application built using the **MERN Stack**. It provides a modern shopping experience for customers along with a dedicated admin panel for managing products, customers, and orders.
 
-The project focuses on clean UI, responsive design, authentication, REST APIs, MongoDB integration, cart and wishlist functionality, and complete order management.
+The project focuses on clean UI, responsive design, authentication, REST APIs, MongoDB integration, cart and wishlist functionality, server-side order validation, and complete order management.
 
 ---
 
@@ -17,9 +17,12 @@ GLOWRY is designed as a complete skincare shopping platform where users can:
 * Manage their profile and addresses
 * Place and track orders
 * Manage account preferences
+* Change their password
+* Reset forgotten passwords
 * Review products
+* Contact the store
 
-The application also includes an **Admin Dashboard** for store management.
+The application also includes a dedicated **Admin Dashboard** for store management.
 
 ---
 
@@ -36,6 +39,7 @@ The application also includes an **Admin Dashboard** for store management.
 * Shopping cart
 * Cart quantity management
 * Checkout
+* Server-side coupon and discount validation
 * Order placement
 * Order history
 * Order tracking
@@ -46,7 +50,7 @@ The application also includes an **Admin Dashboard** for store management.
 * Forgot password
 * Password reset
 * Product reviews
-* Contact form
+* Contact form with rate limiting
 
 ### 👑 Admin Features
 
@@ -62,6 +66,7 @@ The application also includes an **Admin Dashboard** for store management.
 * Update order status
 * Recent orders
 * Revenue overview
+* Admin-only protected routes
 
 ---
 
@@ -80,15 +85,16 @@ The application also includes an **Admin Dashboard** for store management.
 
 ### Backend
 
-| Technology | Purpose             |
-| ---------- | ------------------- |
-| Node.js    | Backend runtime     |
-| Express.js | REST API            |
-| MongoDB    | Database            |
-| Mongoose   | MongoDB ODM         |
-| JWT        | Authentication      |
-| bcrypt.js  | Password hashing    |
-| Nodemailer | Email functionality |
+| Technology | Purpose                       |
+| ---------- | ----------------------------- |
+| Node.js    | Backend runtime               |
+| Express.js | REST API                      |
+| MongoDB    | Database                      |
+| Mongoose   | MongoDB ODM                   |
+| JWT        | Authentication                |
+| bcrypt.js  | Password hashing              |
+| Nodemailer | Email functionality           |
+| CORS       | Cross-origin request handling |
 
 ---
 
@@ -96,14 +102,18 @@ The application also includes an **Admin Dashboard** for store management.
 
 ```text
 glowry-skincare-ecommerce/
+
 │
 ├── frontend/
 │   ├── src/
 │   │   ├── assets/
 │   │   ├── components/
+│   │   │   └── product-details/
+│   │   ├── config/
 │   │   ├── context/
-│   │   ├── data/
-│   │   └── pages/
+│   │   ├── pages/
+│   │   ├── services/
+│   │   └── index.css
 │   └── package.json
 │
 ├── backend/
@@ -112,6 +122,8 @@ glowry-skincare-ecommerce/
 │   ├── middleware/
 │   ├── models/
 │   ├── routes/
+│   ├── scripts/
+│   │   └── seedAdmin.js
 │   ├── utils/
 │   ├── public/
 │   ├── seedProducts.js
@@ -127,6 +139,8 @@ glowry-skincare-ecommerce/
 │   ├── admin_dashboard.png
 │   └── admin_products.png
 │
+├── .env.example
+├── .gitignore
 └── README.md
 ```
 
@@ -166,7 +180,7 @@ glowry-skincare-ecommerce/
 
 ## 🔐 Authentication & Security
 
-The application uses JWT-based authentication and role-based access control.
+The application uses **JWT-based authentication** and **role-based access control** to protect user and admin functionality.
 
 ### User Authentication
 
@@ -176,7 +190,10 @@ The application uses JWT-based authentication and role-based access control.
 * JWT token generation
 * Protected user routes
 * Password change
+* Forgot password
 * Password reset
+* Generic login error response for invalid credentials
+* Password validation during registration and password change
 
 ### Admin Authentication
 
@@ -184,8 +201,19 @@ The application uses JWT-based authentication and role-based access control.
 * JWT-based admin authentication
 * Admin-only protected routes
 * Role-based authorization
+* Admin creation/promotion script
 
-Sensitive credentials and environment variables are excluded from the repository.
+### Security Measures
+
+* Sensitive credentials are stored in environment variables
+* `.env` files are excluded from Git
+* JWT secrets are not committed to the repository
+* Passwords are hashed before storage
+* CORS is restricted using `FRONTEND_URL`
+* Contact API is rate-limited
+* Coupon and discount validation is handled server-side
+* Order IDs are generated server-side
+* Stock updates are rolled back if an order cannot be completed successfully
 
 ---
 
@@ -201,6 +229,8 @@ View Product Details
 Add to Cart
       ↓
 Review Cart
+      ↓
+Apply Coupon
       ↓
 Checkout
       ↓
@@ -221,6 +251,20 @@ Orders can move through the following statuses:
 * Delivered
 * Cancelled
 
+### Coupon & Discount Handling
+
+Coupons and discounts are validated on the **server side** before an order is created.
+
+The backend handles:
+
+* Coupon code validation
+* Minimum order requirements
+* First-order-only coupon restrictions
+* Discount calculation
+* Final order amount calculation
+
+This prevents the frontend from controlling the final discount value.
+
 ---
 
 ## 👑 Admin Dashboard
@@ -238,6 +282,7 @@ Administrators can also manage:
 * Products
 * Orders
 * Customers
+* Order statuses
 
 ---
 
@@ -253,16 +298,50 @@ Make sure you have installed:
 
 ---
 
-### 1. Clone the Repository
+## 🔐 Environment Variables
+
+GLOWRY uses environment variables for database configuration, authentication, frontend-backend communication, CORS, email functionality, and admin setup.
+
+A `.env.example` file is included in the repository as a reference.
+
+> **Do not commit real `.env` files or credentials to GitHub.**
+
+### Backend Environment Variables
+
+Create a `.env` file inside the `backend` folder:
+
+```env
+PORT=5000
+MONGO_URI=your_mongodb_connection_string
+JWT_SECRET=your_jwt_secret
+EMAIL_USER=your_email
+EMAIL_PASS=your_email_app_password
+FRONTEND_URL=http://localhost:5174
+ADMIN_EMAIL=your_admin_email
+ADMIN_PASSWORD=your_admin_password
+```
+
+### Frontend Environment Variables
+
+Create a `.env` file inside the `frontend` folder:
+
+```env
+VITE_API_URL=http://localhost:5000/api
+```
+
+---
+
+## 1. Clone the Repository
 
 ```bash
 git clone https://github.com/Namitaa2002/glowry-skincare-ecommerce.git
+
 cd glowry-skincare-ecommerce
 ```
 
 ---
 
-### 2. Backend Setup
+## 2. Backend Setup
 
 Navigate to the backend:
 
@@ -276,16 +355,7 @@ Install dependencies:
 npm install
 ```
 
-Create a `.env` file inside the `backend` folder:
-
-```env
-PORT=5000
-MONGO_URI=your_mongodb_connection_string
-JWT_SECRET=your_jwt_secret
-
-EMAIL_USER=your_email
-EMAIL_PASS=your_email_app_password
-```
+Create a `.env` file inside the `backend` folder using the environment variables mentioned above.
 
 Start the backend server:
 
@@ -301,7 +371,7 @@ http://localhost:5000
 
 ---
 
-### 3. Frontend Setup
+## 3. Frontend Setup
 
 Open a new terminal and navigate to the frontend:
 
@@ -315,6 +385,12 @@ Install dependencies:
 npm install
 ```
 
+Create a `.env` file inside the `frontend` folder:
+
+```env
+VITE_API_URL=http://localhost:5000/api
+```
+
 Start the development server:
 
 ```bash
@@ -324,8 +400,37 @@ npm run dev
 Frontend:
 
 ```text
-http://localhost:5173
+http://localhost:5174
 ```
+
+---
+
+## 4. Database Setup
+
+Make sure MongoDB is running and the `MONGO_URI` in the backend `.env` file points to the required MongoDB database.
+
+Product seed data can be inserted using the project's product seed script.
+
+---
+
+## 5. Create / Promote Admin
+
+The project includes an admin setup script:
+
+```text
+backend/scripts/seedAdmin.js
+```
+
+The script can be used to create or promote an administrator account using the configured admin credentials.
+
+Run:
+
+```bash
+cd backend
+npm run seed:admin
+```
+
+The script promotes an existing user when applicable instead of creating duplicate admin accounts.
 
 ---
 
@@ -345,6 +450,16 @@ http://localhost:5173
 | `/track-order`  | Track Order      |
 | `/profile`      | User Profile     |
 | `/settings`     | Account Settings |
+
+### Authentication
+
+| Route              | Description       |
+| ------------------ | ----------------- |
+| `/login`           | User Login        |
+| `/register`        | User Registration |
+| `/forgot-password` | Forgot Password   |
+| `/reset-password`  | Password Reset    |
+| `/change-password` | Change Password   |
 
 ### Admin
 
@@ -374,7 +489,7 @@ The backend is organized into separate REST API route modules for:
 * Admin Orders
 * Admin Users
 
-This structure keeps the backend modular and easier to maintain.
+The backend follows a modular structure using separate routes, controllers, models, middleware, and utility modules.
 
 ---
 
@@ -387,6 +502,68 @@ Email functionality is used for account-related communication such as:
 * Welcome email after registration
 * Password reset emails
 
+Email credentials are configured through environment variables and are not stored in the repository.
+
+---
+
+## 📦 Order & Inventory Handling
+
+Order creation is processed on the backend to maintain data integrity.
+
+The backend handles:
+
+* Server-generated order IDs
+* Coupon validation
+* Discount calculation
+* Product price validation
+* Stock validation
+* Stock decrement
+* Order creation
+* Stock rollback if an order cannot be completed successfully
+
+This ensures that sensitive order calculations and inventory operations are not controlled by the frontend.
+
+---
+
+## 🧩 Application Architecture
+
+### Frontend
+
+The frontend follows a component-based React architecture with:
+
+* Reusable components
+* React Router navigation
+* Context-based state management
+* Centralized API configuration
+* Axios-based API communication
+* Protected routes
+* Customer and admin interfaces
+* Responsive layouts
+
+### Backend
+
+The backend follows a modular Express.js architecture:
+
+```text
+Routes
+  ↓
+Controllers
+  ↓
+Models
+  ↓
+MongoDB
+```
+
+Middleware is used for:
+
+* Authentication
+* Authorization
+* CORS configuration
+* Rate limiting
+* Request handling
+
+Business logic is maintained in controllers to keep the API structure organized and maintainable.
+
 ---
 
 ## 🎯 Learning Objectives
@@ -398,13 +575,19 @@ This project was developed to gain practical experience with:
 * REST API development
 * MongoDB database operations
 * Authentication and authorization
+* JWT-based authentication
+* Password hashing
 * CRUD operations
 * API integration using Axios
 * State management
 * Protected routes
 * Admin dashboards
 * E-commerce workflows
+* Order management
+* Server-side validation
 * Responsive UI development
+* Environment variable management
+* Backend security practices
 
 ---
 
@@ -418,9 +601,11 @@ Possible future enhancements include:
 * Inventory management
 * Sales analytics
 * Cloud image storage
-* Deployment with production database
+* Production deployment
 * Automated email notifications
 * Advanced admin reporting
+* Automated testing
+* CI/CD integration
 
 ---
 
@@ -430,7 +615,7 @@ Possible future enhancements include:
 
 **MCA Graduate | Aspiring Software Developer**
 
-Built as a full-stack MERN project to demonstrate practical development skills across frontend, backend, database, authentication, and e-commerce functionality.
+Built as a full-stack MERN project to demonstrate practical development skills across frontend, backend, database, authentication, security, and e-commerce functionality.
 
 ---
 

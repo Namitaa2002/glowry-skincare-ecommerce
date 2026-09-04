@@ -188,35 +188,20 @@ function Settings() {
 
 
         const response =
-          await axios.put(
-
-            `${API_BASE_URL}/auth/change-password`,
-
-            {
-
-              userId: user.id,
-
-              currentPassword,
-
-              newPassword,
-
-              confirmPassword,
-
+        await axios.put(
+          `${API_BASE_URL}/auth/change-password/${user.id}`,
+          {
+            currentPassword,
+            newPassword,
+            confirmPassword,
+          },
+          {
+            headers: {
+              Authorization:
+                `Bearer ${token}`,
             },
-
-            {
-
-              headers: {
-
-                Authorization:
-                  `Bearer ${token}`,
-
-              },
-
-            }
-
-          );
-
+          }
+        );
 
         setSuccess(
 

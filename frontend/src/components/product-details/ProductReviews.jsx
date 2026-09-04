@@ -3,7 +3,6 @@ function ProductReviews({
   reviews,
   reviewsLoading,
   reviewRating,
-  setReviewRating,
   reviewComment,
   setReviewComment,
   reviewSubmitting,

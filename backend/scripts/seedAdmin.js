@@ -40,15 +40,19 @@ const seedAdmin = async () => {
       });
 
     if (existingAdmin) {
-      if (
-        existingAdmin.role !==
-        "admin"
-      ) {
-        existingAdmin.role =
-          "admin";
+      existingAdmin.role = "admin";
 
-        await existingAdmin.save();
-      }
+      existingAdmin.password =
+        await bcrypt.hash(
+          adminPassword,
+          10
+        );
+
+      await existingAdmin.save();
+
+      console.log(
+        "Existing user promoted to admin and password updated."
+      );
 
       process.exit(0);
     }

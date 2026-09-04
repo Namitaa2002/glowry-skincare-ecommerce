@@ -1,4 +1,3 @@
-
 import {
   Link,
   useNavigate,
@@ -325,7 +324,7 @@ function TrackOrder() {
           >
 
             <Link
-              to="/my-orders"
+              to="/dashboard/orders"
               className="track-back-button"
             >
               ← Back to My Orders
@@ -443,7 +442,7 @@ function TrackOrder() {
           </p>
 
           <Link
-            to="/my-orders"
+            to="/dashboard/orders"
             className="track-back-button"
           >
             ← Back to My Orders
@@ -849,7 +848,7 @@ function TrackOrder() {
       <div className="track-order-footer">
 
         <Link
-          to="/my-orders"
+          to="/dashboard/orders"
           className="track-back-button"
         >
           ← Back to My Orders
@@ -864,4 +863,3 @@ function TrackOrder() {
 }
 
 export default TrackOrder;
-
